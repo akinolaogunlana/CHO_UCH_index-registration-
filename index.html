@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="style.css">
   <title>CHO INDEXING FORM</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -14,6 +14,7 @@
       method="POST"
       enctype="multipart/form-data">
 
+  <!-- PERSONAL INFORMATION -->
   <h3>PERSONAL INFORMATION</h3>
   <input name="surname" placeholder="SURNAME" required>
   <input name="firstname" placeholder="FIRSTNAME" required>
@@ -32,11 +33,12 @@
 
   <input name="bloodgroup" placeholder="BLOOD GROUP">
   <input name="state" placeholder="STATE">
-  <input name="lga" placeholder="LGA / CITY / TOWN">
+  <input name="lga" placeholder="LGA / CITY/TOWN">
 
   <label for="dob">DATE OF BIRTH</label>
   <input type="date" name="dob" id="dob" required>
 
+  <!-- O'LEVEL -->
   <h3>O'LEVEL</h3>
   <select name="olevel_type" required>
     <option value="">SELECT O-LEVEL TYPE</option>
@@ -49,49 +51,51 @@
   <input name="olevel_year" placeholder="O-LEVEL YEAR(S)">
   <input name="olevel_exam" placeholder="O-LEVEL EXAM NUMBER">
 
+  <!-- A'LEVEL / PROFESSIONAL -->
   <h3>A'LEVEL / PROFESSIONAL</h3>
   <input name="alevel_type" placeholder="A-LEVEL TYPE">
   <input name="alevel_year" placeholder="A-LEVEL YEAR">
   <input name="pro_cert" placeholder="PROFESSIONAL CERTIFICATE NUMBER">
 
+  <!-- SUBJECTS & GRADES -->
   <h3>SUBJECTS & GRADES</h3>
 
   <label>ENGLISH</label>
-  <input name="english_grade" id="engGrade" placeholder="GRADE" required>
-  <select id="engBody" name="english_body">
+  <input id="engGrade" placeholder="GRADE" required>
+  <select id="engBody">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>MATHEMATICS</label>
-  <input name="maths_grade" id="mathGrade" placeholder="GRADE" required>
-  <select id="mathBody" name="maths_body">
+  <input id="mathGrade" placeholder="GRADE" required>
+  <select id="mathBody">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>BIOLOGY / HEALTH SCIENCE</label>
-  <input name="biology_grade" id="bioGrade" placeholder="GRADE">
-  <select id="bioBody" name="biology_body">
+  <input id="bioGrade" placeholder="GRADE">
+  <select id="bioBody">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>CHEMISTRY</label>
-  <input name="chemistry_grade" id="chemGrade" placeholder="GRADE">
-  <select id="chemBody" name="chemistry_body">
+  <input id="chemGrade" placeholder="GRADE">
+  <select id="chemBody">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>PHYSICS</label>
-  <input name="physics_grade" id="phyGrade" placeholder="GRADE">
-  <select id="phyBody" name="physics_body">
+  <input id="phyGrade" placeholder="GRADE">
+  <select id="phyBody">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
-  <!-- Hidden combined grade fields for Apps Script -->
+  <!-- Hidden fields for combined grade + board -->
   <input type="hidden" name="english">
   <input type="hidden" name="maths">
   <input type="hidden" name="biology">
@@ -102,20 +106,24 @@
 
   <br><br>
   <button type="submit">SUBMIT</button>
-
 </form>
 
+<!-- Combine grades + board before submission -->
 <script>
-const form = document.getElementById("indexForm");
+  const form = document.getElementById("indexForm");
 
-form.addEventListener("submit", function(e) {
-  // Before submission, combine grades + board into hidden fields
-  document.querySelector('input[name="english"]').value = document.getElementById("engGrade").value + " (" + document.getElementById("engBody").value + ")";
-  document.querySelector('input[name="maths"]').value = document.getElementById("mathGrade").value + " (" + document.getElementById("mathBody").value + ")";
-  document.querySelector('input[name="biology"]').value = document.getElementById("bioGrade").value + " (" + document.getElementById("bioBody").value + ")";
-  document.querySelector('input[name="chemistry"]').value = document.getElementById("chemGrade").value + " (" + document.getElementById("chemBody").value + ")";
-  document.querySelector('input[name="physics"]').value = document.getElementById("phyGrade").value + " (" + document.getElementById("phyBody").value + ")";
-});
+  form.addEventListener("submit", function(e) {
+    document.querySelector('input[name="english"]').value = 
+      document.getElementById("engGrade").value + " (" + document.getElementById("engBody").value + ")";
+    document.querySelector('input[name="maths"]').value = 
+      document.getElementById("mathGrade").value + " (" + document.getElementById("mathBody").value + ")";
+    document.querySelector('input[name="biology"]').value = 
+      document.getElementById("bioGrade").value + " (" + document.getElementById("bioBody").value + ")";
+    document.querySelector('input[name="chemistry"]').value = 
+      document.getElementById("chemGrade").value + " (" + document.getElementById("chemBody").value + ")";
+    document.querySelector('input[name="physics"]').value = 
+      document.getElementById("phyGrade").value + " (" + document.getElementById("phyBody").value + ")";
+  });
 </script>
 
 </body>
