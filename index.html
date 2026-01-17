@@ -9,7 +9,7 @@
 
 <h2>CHO INDEXING DATA COLLECTION</h2>
 
-<form id="indexForm">
+<form id="indexForm" enctype="multipart/form-data">
 
   <!-- Personal Information -->
   <input name="surname" placeholder="SURNAME" required><br>
@@ -30,6 +30,7 @@
   <input name="bloodgroup" placeholder="BLOOD GROUP"><br>
   <input name="state" placeholder="STATE"><br>
   <input name="lga" placeholder="LGA / CITY/TOWN"><br>
+
   <label for="dob">DATE OF BIRTH</label><br>
   <input type="date" name="dob" id="dob" required><br>
 
@@ -42,6 +43,7 @@
     <option value="NECO / NECO">NECO / NECO (Two Sittings)</option>
     <option value="NECO / WAEC">NECO / WAEC (Combined)</option>
   </select><br>
+
   <input name="olevel_year" placeholder="O-LEVEL YEAR(S)"><br>
   <input name="olevel_exam" placeholder="O-LEVEL EXAM NUMBER"><br>
 
@@ -50,7 +52,7 @@
   <input name="alevel_year" placeholder="A-LEVEL YEAR"><br>
   <input name="pro_cert" placeholder="PROFESSIONAL CERTIFICATE NUMBER"><br>
 
-  <!-- Subjects & Grades -->
+  <!-- SUBJECTS -->
   <input id="engGrade" placeholder="ENGLISH GRADE" required>
   <select id="engBody">
     <option value="WAEC">WAEC</option>
@@ -84,80 +86,9 @@
   <input name="remarks" placeholder="REMARKS"><br><br>
 
   <button type="submit">SUBMIT</button>
+
 </form>
 
-<script>
-  // === REPLACE THESE WITH YOUR DETAILS ===
-  const SHEETBEST_URL = "https://api.sheetbest.com/sheets/c610f771-67a2-4120-b4fa-c2d102aee546";
-  const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/444391351669479/upload"; // Your Cloudinary Cloud Name
-  const CLOUDINARY_PRESET = "zZVWX8x_CQogXAd0B7GIIcXaK_0"; // Your Upload Preset
-
-  document.getElementById("indexForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const form = e.target;
-
-    // 1️⃣ Upload passport
-    const passportFile = document.getElementById("passport").files[0];
-    if (!passportFile) return alert("Please select a passport image.");
-
-    const cloudForm = new FormData();
-    cloudForm.append("file", passportFile);
-    cloudForm.append("upload_preset", CLOUDINARY_PRESET);
-
-    let passportUrl = "";
-    try {
-      const cloudRes = await fetch(CLOUDINARY_URL, { method: "POST", body: cloudForm });
-      const cloudData = await cloudRes.json();
-      passportUrl = cloudData.secure_url;
-    } catch(err) {
-      console.error(err);
-      return alert("Passport upload failed. Check Cloudinary settings.");
-    }
-
-    // 2️⃣ Combine grades
-    const subjects = ["english","maths","biology","chemistry","physics"];
-    const data = {};
-    subjects.forEach(subj => {
-      const grade = document.getElementById(subj.slice(0,3)+"Grade").value;
-      const board = document.getElementById(subj.slice(0,3)+"Body").value;
-      data[subj.toUpperCase()] = `${grade} (${board})`;
-    });
-
-    // 3️⃣ Collect form data
-    data["SURNAME"] = form.surname.value.toUpperCase();
-    data["FIRSTNAME"] = form.firstname.value.toUpperCase();
-    data["OTHERNAMES"] = form.othernames.value.toUpperCase();
-    data["PASSPORT"] = passportUrl;
-    data["CADRE"] = form.cadre.value;
-    data["GENDER"] = form.gender.value;
-    data["BLOOD_GROUP"] = form.bloodgroup.value;
-    data["STATE"] = form.state.value;
-    data["LGA_CITY_TOWN"] = form.lga.value;
-    data["DATE_OF_BIRTH"] = form.dob.value;
-    data["OLEVEL_TYPE"] = form.olevel_type.value;
-    data["OLEVEL_YEAR"] = form.olevel_year.value;
-    data["OLEVEL_EXAM_NUMBER"] = form.olevel_exam.value;
-    data["ALEVEL_TYPE"] = form.alevel_type.value;
-    data["ALEVEL_YEAR"] = form.alevel_year.value;
-    data["PROFESSIONAL_CERTIFICATE_NUMBER"] = form.pro_cert.value;
-    data["REMARKS"] = form.remarks.value;
-
-    // 4️⃣ Send to SheetBest
-    try {
-      const res = await fetch(SHEETBEST_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      alert("Submission successful!");
-      form.reset();
-    } catch(err) {
-      console.error(err);
-      alert("Submission failed. Check console for details.");
-    }
-  });
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
