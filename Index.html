@@ -11,6 +11,7 @@
 <form id="indexForm" enctype="multipart/form-data">
 
 <h3>Personal Information</h3>
+
 <input name="surname" placeholder="Surname" required>
 <input name="firstname" placeholder="First Name" required>
 <input name="othernames" placeholder="Other Names">
@@ -27,15 +28,25 @@
 
 <input name="bloodgroup" placeholder="Blood Group">
 <input name="state" placeholder="State">
-<input name="lga" placeholder="LGA">
+<input name="lga" placeholder="LGA / City / Town">
 <input type="date" name="dob">
 
 <h3>O'Level</h3>
-<input name="olevel_type" placeholder="O-Level Type (e.g COMBINED)">
-<input name="olevel_year" placeholder="O-Level Year(s)">
+
+<select name="olevel_type" required>
+  <option value="">Select O-Level Type</option>
+  <option value="WAEC">WAEC (Single Sitting)</option>
+  <option value="NECO">NECO (Single Sitting)</option>
+  <option value="WAEC / WAEC">WAEC / WAEC (Two Sittings)</option>
+  <option value="NECO / NECO">NECO / NECO (Two Sittings)</option>
+  <option value="NECO / WAEC">NECO / WAEC (Combined)</option>
+</select>
+
+<input name="olevel_year" placeholder="O-Level Year(s) e.g 2021 / 2023">
 <input name="olevel_exam" placeholder="O-Level Exam Number(s)">
 
 <h3>A'Level / Professional</h3>
+
 <input name="alevel_type" placeholder="A-Level Type">
 <input name="alevel_year" placeholder="A-Level Year">
 <input name="pro_cert" placeholder="Professional Certificate Number">
@@ -43,53 +54,66 @@
 <h3>Subjects & Grades</h3>
 
 <!-- ENGLISH -->
-<input id="engGrade" placeholder="English Grade (A1–F9)">
+<label>English Language</label><br>
+<input id="engGrade" placeholder="Grade e.g B2" required>
 <select id="engBody">
-  <option>WAEC</option>
-  <option>NECO</option>
+  <option value="WAEC">WAEC</option>
+  <option value="NECO">NECO</option>
 </select>
+<br><br>
 
 <!-- MATHS -->
-<input id="mathGrade" placeholder="Mathematics Grade (A1–F9)">
+<label>Mathematics</label><br>
+<input id="mathGrade" placeholder="Grade e.g C5" required>
 <select id="mathBody">
-  <option>WAEC</option>
-  <option>NECO</option>
+  <option value="WAEC">WAEC</option>
+  <option value="NECO">NECO</option>
 </select>
+<br><br>
 
 <!-- BIOLOGY -->
-<input id="bioGrade" placeholder="Biology/HS Grade (A1–F9)">
+<label>Biology / Health Science</label><br>
+<input id="bioGrade" placeholder="Grade e.g C4">
 <select id="bioBody">
-  <option>WAEC</option>
-  <option>NECO</option>
+  <option value="WAEC">WAEC</option>
+  <option value="NECO">NECO</option>
 </select>
+<br><br>
 
 <!-- CHEMISTRY -->
-<input id="chemGrade" placeholder="Chemistry Grade (A1–F9)">
+<label>Chemistry</label><br>
+<input id="chemGrade" placeholder="Grade e.g C6">
 <select id="chemBody">
-  <option>WAEC</option>
-  <option>NECO</option>
+  <option value="WAEC">WAEC</option>
+  <option value="NECO">NECO</option>
 </select>
+<br><br>
 
 <!-- PHYSICS -->
-<input id="phyGrade" placeholder="Physics Grade (A1–F9)">
+<label>Physics</label><br>
+<input id="phyGrade" placeholder="Grade e.g C5">
 <select id="phyBody">
-  <option>WAEC</option>
-  <option>NECO</option>
+  <option value="WAEC">WAEC</option>
+  <option value="NECO">NECO</option>
 </select>
 
-<!-- Hidden fields sent to sheet -->
+<!-- HIDDEN FIELDS SENT TO GOOGLE SHEET -->
 <input type="hidden" name="english">
 <input type="hidden" name="maths">
 <input type="hidden" name="biology">
 <input type="hidden" name="chemistry">
 <input type="hidden" name="physics">
 
+<br><br>
+
 <input name="remarks" placeholder="Remarks">
 
+<br><br>
 <button type="submit">Submit</button>
 
 </form>
 
 <script src="script.js"></script>
+
 </body>
-  </html>
+</html>
