@@ -9,7 +9,10 @@
 
 <h2>CHO INDEXING DATA COLLECTION</h2>
 
-<form id="indexForm" enctype="multipart/form-data">
+<form id="indexForm"
+      action="https://script.google.com/macros/s/AKfycbzieIuL9kZqDLTmrQlW_FoRNEgJmeGjK2HMac_PIHhtUeogci_TwQgtTyZ3YoUUHg/exec"
+      method="POST"
+      enctype="multipart/form-data">
 
   <h3>PERSONAL INFORMATION</h3>
   <input name="surname" placeholder="SURNAME" required>
@@ -54,41 +57,41 @@
   <h3>SUBJECTS & GRADES</h3>
 
   <label>ENGLISH</label>
-  <input id="engGrade" placeholder="GRADE" required>
-  <select id="engBody">
+  <input name="english_grade" id="engGrade" placeholder="GRADE" required>
+  <select id="engBody" name="english_body">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>MATHEMATICS</label>
-  <input id="mathGrade" placeholder="GRADE" required>
-  <select id="mathBody">
+  <input name="maths_grade" id="mathGrade" placeholder="GRADE" required>
+  <select id="mathBody" name="maths_body">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>BIOLOGY / HEALTH SCIENCE</label>
-  <input id="bioGrade" placeholder="GRADE">
-  <select id="bioBody">
+  <input name="biology_grade" id="bioGrade" placeholder="GRADE">
+  <select id="bioBody" name="biology_body">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>CHEMISTRY</label>
-  <input id="chemGrade" placeholder="GRADE">
-  <select id="chemBody">
+  <input name="chemistry_grade" id="chemGrade" placeholder="GRADE">
+  <select id="chemBody" name="chemistry_body">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
   <label>PHYSICS</label>
-  <input id="phyGrade" placeholder="GRADE">
-  <select id="phyBody">
+  <input name="physics_grade" id="phyGrade" placeholder="GRADE">
+  <select id="phyBody" name="physics_body">
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
   </select>
 
-  <!-- Hidden fields to match Sheet column names -->
+  <!-- Hidden combined grade fields for Apps Script -->
   <input type="hidden" name="english">
   <input type="hidden" name="maths">
   <input type="hidden" name="biology">
@@ -103,31 +106,15 @@
 </form>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzieIuL9kZqDLTmrQlW_FoRNEgJmeGjK2HMac_PIHhtUeogci_TwQgtTyZ3YoUUHg/exec";
-
 const form = document.getElementById("indexForm");
 
-form.addEventListener("submit", async function(e) {
-  e.preventDefault();
-
-  const formData = new FormData(form);
-
-  // Combine grades + exam board
-  formData.set("english", document.getElementById("engGrade").value + " (" + document.getElementById("engBody").value + ")");
-  formData.set("maths", document.getElementById("mathGrade").value + " (" + document.getElementById("mathBody").value + ")");
-  formData.set("biology", document.getElementById("bioGrade").value + " (" + document.getElementById("bioBody").value + ")");
-  formData.set("chemistry", document.getElementById("chemGrade").value + " (" + document.getElementById("chemBody").value + ")");
-  formData.set("physics", document.getElementById("phyGrade").value + " (" + document.getElementById("phyBody").value + ")");
-
-  try {
-    const res = await fetch(SCRIPT_URL, { method: "POST", body: formData });
-    const text = await res.text();
-    alert(text);
-    if (text === "SUCCESS") form.reset();
-  } catch (err) {
-    alert("Submission failed. Please try again.");
-    console.error(err);
-  }
+form.addEventListener("submit", function(e) {
+  // Before submission, combine grades + board into hidden fields
+  document.querySelector('input[name="english"]').value = document.getElementById("engGrade").value + " (" + document.getElementById("engBody").value + ")";
+  document.querySelector('input[name="maths"]').value = document.getElementById("mathGrade").value + " (" + document.getElementById("mathBody").value + ")";
+  document.querySelector('input[name="biology"]').value = document.getElementById("bioGrade").value + " (" + document.getElementById("bioBody").value + ")";
+  document.querySelector('input[name="chemistry"]').value = document.getElementById("chemGrade").value + " (" + document.getElementById("chemBody").value + ")";
+  document.querySelector('input[name="physics"]').value = document.getElementById("phyGrade").value + " (" + document.getElementById("phyBody").value + ")";
 });
 </script>
 
