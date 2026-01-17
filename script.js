@@ -1,8 +1,15 @@
+document.addEventListener("DOMContentLoaded", function () {
+
 const SHEETBEST_URL = "https://api.sheetbest.com/sheets/c610f771-67a2-4120-b4fa-c2d102aee546";
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/444391351669479/upload";
 const CLOUDINARY_PRESET = "zZVWX8x_CQogXAd0B7GIIcXaK_0";
 
 const form = document.getElementById("indexForm");
+
+if (!form) {
+  alert("Form not found. Check form ID.");
+  return;
+}
 
 form.addEventListener("submit", async function(e) {
   e.preventDefault();
@@ -12,7 +19,7 @@ form.addEventListener("submit", async function(e) {
   submitBtn.innerText = "Submitting...";
 
   try {
-    // ========== PASSPORT UPLOAD ==========
+    /* ========== PASSPORT UPLOAD ========== */
     const passportFile = document.getElementById("passport").files[0];
     if (!passportFile) throw "Passport required";
 
@@ -30,7 +37,7 @@ form.addEventListener("submit", async function(e) {
     const cloudData = await cloudRes.json();
     const passportUrl = cloudData.secure_url;
 
-    // ========== SUBJECT GRADES ==========
+    /* ========== SUBJECT GRADES ========== */
     const gradeMap = {
       ENGLISH: ["engGrade","engBody"],
       MATHEMATICS: ["mathGrade","mathBody"],
@@ -48,7 +55,7 @@ form.addEventListener("submit", async function(e) {
       data[subject] = grade ? `${grade} (${body})` : "";
     });
 
-    // ========== PERSONAL DATA ==========
+    /* ========== PERSONAL DATA ========== */
     data["SURNAME"] = form.surname.value.trim().toUpperCase();
     data["FIRSTNAME"] = form.firstname.value.trim().toUpperCase();
     data["OTHERNAMES"] = form.othernames.value.trim().toUpperCase();
@@ -70,7 +77,7 @@ form.addEventListener("submit", async function(e) {
 
     data["REMARKS"] = form.remarks.value;
 
-    // ========== SEND TO SHEETBEST ==========
+    /* ========== SEND TO SHEETBEST ========== */
     const res = await fetch(SHEETBEST_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,7 +86,7 @@ form.addEventListener("submit", async function(e) {
 
     if (!res.ok) throw "SheetBest submission failed";
 
-    // ========== SUCCESS ==========
+    /* ========== SUCCESS ========== */
     window.location.href = "success.html";
 
   } catch (error) {
@@ -88,4 +95,6 @@ form.addEventListener("submit", async function(e) {
     submitBtn.disabled = false;
     submitBtn.innerText = "SUBMIT";
   }
+});
+
 });
