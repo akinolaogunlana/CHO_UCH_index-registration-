@@ -1,87 +1,3 @@
-/* =======================
-   GENERAL PAGE STYLES
-======================= */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f2f5f7;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-}
-
-h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #2c3e50;
-}
-
-h3 {
-    margin-bottom: 15px;
-    color: #34495e;
-}
-
-/* =======================
-   FORM CONTAINER
-======================= */
-form {
-    max-width: 650px;
-    margin: 0 auto;
-    background-color: #fff;
-    padding: 30px 35px;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-}
-
-/* =======================
-   FORM SECTIONS
-======================= */
-form section {
-    background-color: #f7f9fa;
-    padding: 20px 20px 15px 20px;
-    border-left: 5px solid #3498db;
-    margin-bottom: 25px;
-    border-radius: 8px;
-}
-
-/* =======================
-   INPUTS AND SELECTS
-======================= */
-input[type="text"],
-input[type="file"],
-input[type="date"],
-select {
-    width: 100%;
-    padding: 10px 12px;
-    margin-bottom: 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 15px;
-    box-sizing: border-box;
-    transition: border 0.3s, box-shadow 0.3s;
-}
-
-input[type="text"]:focus,
-input[type="date"]:focus,
-select:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 5px rgba(52, 152, 219, 0.4);
-    outline: none;
-}
-
-input[readonly] {
-    background-color: #e9ecef;
-    cursor: not-allowed;
-}
-
-/* =======================
-   LABELS
-======================= */
-label {
-    font-weight: 600;
-    display: block;
-    margin-bottom: 5px;
-    color: #2c3e50;
-}
 
 /* =======================
    SUBJECTS GRID
@@ -89,7 +5,7 @@ label {
 .subjects-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 22px;
 }
 
 .subjects-grid div {
@@ -101,50 +17,55 @@ label {
    FILE INPUT STYLING
 ======================= */
 input[type="file"] {
-    padding: 6px;
+    padding: 8px;
     border: 1px solid #ccc;
-    border-radius: 6px;
+    border-radius: 12px;
     cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 input[type="file"]:hover {
-    border-color: #3498db;
+    border-color: #5c6bc0;
+    box-shadow: 0 0 5px rgba(92,107,192,0.4);
 }
 
 /* =======================
    SUBMIT BUTTON
 ======================= */
 button[type="submit"] {
-    background-color: #3498db;
+    background: linear-gradient(135deg, #5c6bc0, #3949ab);
     color: white;
-    padding: 12px 28px;
+    padding: 14px 30px;
     border: none;
-    border-radius: 10px;
+    border-radius: 14px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-top: 10px;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
 button[type="submit"]:hover {
-    background-color: #2980b9;
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #3949ab, #1a237e);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
 /* =======================
    REMARKS INPUT
 ======================= */
 input[name="remarks"] {
-    min-height: 50px;
+    min-height: 60px;
+    resize: vertical;
 }
 
 /* =======================
    RESPONSIVE DESIGN
 ======================= */
-@media (max-width: 700px) {
+@media (max-width: 750px) {
     form {
-        padding: 20px;
+        padding: 25px 20px;
     }
 
     .subjects-grid {
@@ -157,5 +78,4 @@ input[name="remarks"] {
    HIDDEN FIELDS
 ======================= */
 input[type="hidden"] {
-    display: none;
-  }
+    displa
