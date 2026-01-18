@@ -7,15 +7,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("indexForm");
   const submitBtn = form.querySelector("button");
 
-  // Create preview container for passport
   const previewContainer = document.createElement("div");
   previewContainer.style.textAlign = "center";
   previewContainer.style.margin = "15px 0";
   form.insertBefore(previewContainer, submitBtn);
 
-  let passportDataUrl = ""; // Store passport image for PDF
+  let passportDataUrl = "";
 
-  // Preview passport when selected
+  // Passport preview
   document.getElementById("passport").addEventListener("change", function () {
     previewContainer.innerHTML = "";
     const file = this.files[0];
@@ -30,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
         this.value = "";
         return;
       }
-
       const img = document.createElement("img");
       img.style.maxWidth = "150px";
       img.style.borderRadius = "8px";
@@ -40,46 +38,60 @@ document.addEventListener("DOMContentLoaded", function () {
         const canvas = document.createElement("canvas");
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
+        canvas.getContext("2d").drawImage(img, 0, 0);
         passportDataUrl = canvas.toDataURL("image/jpeg");
       };
       previewContainer.appendChild(img);
     }
   });
 
-  // Handle form submission
+  // Form submit
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     submitBtn.disabled = true;
-    submitBtn.innerText = "Uploading passport...";
+    submitBtn.innerText = "Checking duplicates...";
 
     try {
+      const surname = form.surname.value.trim().toUpperCase();
+      const firstname = form.firstname.value.trim().toUpperCase();
+      const dob = form.dob.value;
+
+      // Check for duplicates
+      const existingRes = await fetch(SHEETBEST_URL);
+      if (!existingRes.ok) throw "Failed to fetch existing submissions.";
+      const existingData = await existingRes.json();
+
+      const duplicate = existingData.find(
+        row => row.SURNAME === surname && row.FIRSTNAME === firstname && row.DATE_OF_BIRTH === dob
+      );
+
+      if (duplicate) {
+        alert("Duplicate submission detected. This person has already been indexed.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "SUBMIT";
+        return;
+      }
+
+      submitBtn.innerText = "Uploading passport...";
+
+      // Upload to Cloudinary
       const file = document.getElementById("passport").files[0];
-
       if (!file) throw "Passport photo is required.";
-      if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type))
-        throw "Only JPG and PNG images allowed.";
-      if (file.size > 5 * 1024 * 1024)
-        throw "Image too large (max 5MB).";
-
-      /* ========= 1. Upload Passport to Cloudinary ========= */
       const cloudForm = new FormData();
       cloudForm.append("file", file);
       cloudForm.append("upload_preset", CLOUDINARY_PRESET);
 
       const cloudRes = await fetch(CLOUDINARY_URL, { method: "POST", body: cloudForm });
       if (!cloudRes.ok) throw "Cloudinary upload failed.";
-
       const cloudData = await cloudRes.json();
       if (!cloudData.secure_url) throw "Invalid Cloudinary response.";
 
       submitBtn.innerText = "Saving data...";
 
-      /* ========= 2. Prepare SheetBest Payload ========= */
+      // Prepare payload
       const data = [{
-        SURNAME: form.surname.value.trim().toUpperCase(),
-        FIRSTNAME: form.firstname.value.trim().toUpperCase(),
+        SURNAME: surname,
+        FIRSTNAME: firstname,
         OTHERNAMES: form.othernames.value.trim().toUpperCase(),
         PASSPORT: cloudData.secure_url,
         CADRE: form.cadre.value,
@@ -87,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         BLOOD_GROUP: form.bloodgroup.value,
         STATE: form.state.value,
         LGA_CITY_TOWN: form.lga.value,
-        DATE_OF_BIRTH: form.dob.value,
+        DATE_OF_BIRTH: dob,
         OLEVEL_TYPE: form.olevel_type.value,
         OLEVEL_YEAR: form.olevel_year.value,
         OLEVEL_EXAM_NUMBER: form.olevel_exam.value,
@@ -102,27 +114,27 @@ document.addEventListener("DOMContentLoaded", function () {
         REMARKS: form.remarks.value
       }];
 
-      /* ========= 3. Send to SheetBest ========= */
+      // Save to SheetBest
       const sheetRes = await fetch(SHEETBEST_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
+      if (!sheetRes.ok) throw "Sheet save failed. Check headers.";
 
-      if (!sheetRes.ok) throw "Sheet save failed. Check sheet headers.";
-
-      /* ========= 4. Success Screen with PDF download ========= */
+      // Success screen
       form.innerHTML = `
         <div style="text-align:center;padding:40px">
           <h2 style="color:#2ecc71">✅ Submission Successful</h2>
           <p>Your information has been saved successfully.</p>
-          <button id="downloadPdfBtn">Download PDF Copy</button>
+          <button id="downloadPdfBtn">Download Your PDF Copy</button>
+          <button id="downloadZipBtn" style="margin-top:10px;">Download All Passports (ZIP)</button>
           <button onclick="location.reload()" style="margin-top:10px;">Submit Another</button>
         </div>
       `;
 
-      // PDF Download after submission
-      document.getElementById("downloadPdfBtn").addEventListener("click", async () => {
+      // Download PDF for this user
+      document.getElementById("downloadPdfBtn").addEventListener("click", () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         let y = 20;
@@ -131,47 +143,41 @@ document.addEventListener("DOMContentLoaded", function () {
         doc.text("CHO Indexing Form", 105, y, { align: "center" });
         y += 10;
 
-        if (passportDataUrl) {
-          doc.addImage(passportDataUrl, "JPEG", 80, y, 50, 50);
-          y += 60;
-        }
+        if (passportDataUrl) doc.addImage(passportDataUrl, "JPEG", 80, y, 50, 50);
 
-        doc.setFontSize(12);
-
-        const fields = [
-          ["SURNAME", data[0].SURNAME],
-          ["FIRSTNAME", data[0].FIRSTNAME],
-          ["OTHERNAMES", data[0].OTHERNAMES],
-          ["CADRE", data[0].CADRE],
-          ["GENDER", data[0].GENDER],
-          ["BLOOD GROUP", data[0].BLOOD_GROUP],
-          ["STATE", data[0].STATE],
-          ["LGA / CITY/TOWN", data[0].LGA_CITY_TOWN],
-          ["DATE OF BIRTH", data[0].DATE_OF_BIRTH],
-          ["O-LEVEL TYPE", data[0].OLEVEL_TYPE],
-          ["O-LEVEL YEAR", data[0].OLEVEL_YEAR],
-          ["O-LEVEL EXAM NO.", data[0].OLEVEL_EXAM_NUMBER],
-          ["A-LEVEL TYPE", data[0].ALEVEL_TYPE],
-          ["A-LEVEL YEAR", data[0].ALEVEL_YEAR],
-          ["PROFESSIONAL CERT. NO.", data[0].PROFESSIONAL_CERTIFICATE_NUMBER],
-          ["ENGLISH", data[0].ENGLISH],
-          ["MATHEMATICS", data[0].MATHEMATICS],
-          ["BIOLOGY", data[0].BIOLOGY],
-          ["CHEMISTRY", data[0].CHEMISTRY],
-          ["PHYSICS", data[0].PHYSICS],
-          ["REMARKS", data[0].REMARKS]
-        ];
-
-        fields.forEach(([label, value]) => {
-          doc.text(`${label}: ${value}`, 20, y);
+        y += 60;
+        Object.entries(data[0]).forEach(([key, value]) => {
+          doc.text(`${key}: ${value}`, 20, y);
           y += 8;
-          if (y > 280) {
-            doc.addPage();
-            y = 20;
-          }
+          if (y > 280) { doc.addPage(); y = 20; }
         });
 
-        doc.save(`CHO_Form_${data[0].SURNAME}_${data[0].FIRSTNAME}.pdf`);
+        doc.save(`CHO_Form_${surname}_${firstname}.pdf`);
+      });
+
+      // Download all passports as ZIP
+      document.getElementById("downloadZipBtn").addEventListener("click", async () => {
+        try {
+          const allRes = await fetch(SHEETBEST_URL);
+          const allData = await allRes.json();
+
+          const zip = new JSZip();
+
+          for (let row of allData) {
+            if (!row.PASSPORT) continue;
+
+            const imgRes = await fetch(row.PASSPORT);
+            const blob = await imgRes.blob();
+            zip.file(`${row.SURNAME}_${row.FIRSTNAME}.jpg`, blob);
+          }
+
+          const content = await zip.generateAsync({ type: "blob" });
+          saveAs(content, "All_Passports.zip");
+
+        } catch (err) {
+          alert("Failed to download ZIP.");
+          console.error(err);
+        }
       });
 
     } catch (error) {
@@ -180,6 +186,6 @@ document.addEventListener("DOMContentLoaded", function () {
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT";
     }
-
   });
+
 });
