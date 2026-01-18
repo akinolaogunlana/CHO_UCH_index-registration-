@@ -9,37 +9,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
-
     submitBtn.disabled = true;
     submitBtn.innerText = "Uploading passport...";
 
     try {
       const file = document.getElementById("passport").files[0];
       if (!file) throw "Passport photo is required.";
+      if (file.size > 5 * 1024 * 1024) throw "Image too large (max 5MB).";
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw "Image too large. Use photo under 5MB.";
-      }
-
-      // 1. Upload to Cloudinary
+      // 1️⃣ Upload to Cloudinary
       const cloudForm = new FormData();
       cloudForm.append("file", file);
       cloudForm.append("upload_preset", CLOUDINARY_PRESET);
 
-      const cloudRes = await fetch(CLOUDINARY_URL, {
-        method: "POST",
-        body: cloudForm
-      });
-
+      const cloudRes = await fetch(CLOUDINARY_URL, { method: "POST", body: cloudForm });
       if (!cloudRes.ok) throw "Cloudinary upload failed.";
-
       const cloudData = await cloudRes.json();
       if (!cloudData.secure_url) throw "Invalid Cloudinary response.";
 
       submitBtn.innerText = "Saving data...";
 
-      // 2. Prepare SheetBest data
-      const data = {
+      // 2️⃣ Prepare SheetBest data
+      const data = [{
         SURNAME: form.surname.value.trim().toUpperCase(),
         FIRSTNAME: form.firstname.value.trim().toUpperCase(),
         OTHERNAMES: form.othernames.value.trim().toUpperCase(),
@@ -62,18 +53,18 @@ document.addEventListener("DOMContentLoaded", function () {
         BIOLOGY: bioGrade.value ? `${bioGrade.value} (${bioBody.value})` : "",
         CHEMISTRY: chemGrade.value ? `${chemGrade.value} (${chemBody.value})` : "",
         PHYSICS: phyGrade.value ? `${phyGrade.value} (${phyBody.value})` : ""
-      };
+      }];
 
-      // 3. Send to SheetBest (CORS SAFE MODE)
+      // 3️⃣ Send to SheetBest
       const sheetRes = await fetch(SHEETBEST_URL, {
         method: "POST",
         mode: "cors",
-        body: JSON.stringify(data)
+        body: JSON.stringify(data) // wrap in array
       });
 
       if (!sheetRes.ok) throw "SheetBest rejected the data.";
 
-      // 4. Success screen
+      // 4️⃣ Success message
       form.innerHTML = `
         <div style="text-align:center;padding:40px">
           <h2 style="color:green">✅ Submission Successful</h2>
