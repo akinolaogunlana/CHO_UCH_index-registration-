@@ -29,7 +29,9 @@
 
   <input name="bloodgroup" placeholder="BLOOD GROUP">
   <input name="state" placeholder="STATE">
-  <input name="lga" placeholder="LGA / CITY/TOWN">
+
+  <!-- ✅ FIXED NAME -->
+  <input name="lga_city_town" placeholder="LGA / CITY/TOWN">
 
   <label>DATE OF BIRTH</label>
   <input type="date" name="dob" required>
@@ -73,7 +75,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  const SHEETBEST_URL = "https://api.sheetbest.com/sheets/c610f771-67a2-4120-b4fa-c2d102aee546";
+  const SHEETBEST_URL = "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
   const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
   const CLOUDINARY_PRESET = "cho_passports";
 
@@ -83,16 +85,19 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     btn.disabled = true;
-    btn.innerText = "Uploading...";
+    btn.innerText = "Uploading passport...";
 
     try {
       const file = passport.files[0];
       if (!file) throw "Passport required";
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw "Image too large. Use photo under 5MB.";
-      }
+      if (!["image/jpeg","image/png"].includes(file.type))
+        throw "Only JPG or PNG images allowed";
 
+      if (file.size > 5 * 1024 * 1024)
+        throw "Image must be under 5MB";
+
+      /* Upload to Cloudinary */
       const cloudForm = new FormData();
       cloudForm.append("file", file);
       cloudForm.append("upload_preset", CLOUDINARY_PRESET);
@@ -105,20 +110,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cloudRes.ok) throw "Cloudinary upload failed";
 
       const cloudData = await cloudRes.json();
-      if (!cloudData.secure_url) throw "Upload error";
+      if (!cloudData.secure_url) throw "Image upload error";
 
       btn.innerText = "Saving data...";
 
-      const data = {
-        SURNAME: form.surname.value.toUpperCase(),
-        FIRSTNAME: form.firstname.value.toUpperCase(),
-        OTHERNAMES: form.othernames.value.toUpperCase(),
+      /* EXACT HEADER MATCH */
+      const data = [{
+        SURNAME: form.surname.value.trim().toUpperCase(),
+        FIRSTNAME: form.firstname.value.trim().toUpperCase(),
+        OTHERNAMES: form.othernames.value.trim().toUpperCase(),
         PASSPORT: cloudData.secure_url,
         CADRE: form.cadre.value,
         GENDER: form.gender.value,
         BLOOD_GROUP: form.bloodgroup.value,
         STATE: form.state.value,
-        LGA_CITY_TOWN: form.lga.value,
+        LGA_CITY_TOWN: form.lga_city_town.value,
         DATE_OF_BIRTH: form.dob.value,
         OLEVEL_TYPE: form.olevel_type.value,
         OLEVEL_YEAR: form.olevel_year.value,
@@ -126,13 +132,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ALEVEL_TYPE: form.alevel_type.value,
         ALEVEL_YEAR: form.alevel_year.value,
         PROFESSIONAL_CERTIFICATE_NUMBER: form.pro_cert.value,
-        REMARKS: form.remarks.value,
         ENGLISH: `${engGrade.value} (${engBody.value})`,
         MATHEMATICS: `${mathGrade.value} (${mathBody.value})`,
         BIOLOGY: bioGrade.value ? `${bioGrade.value} (${bioBody.value})` : "",
         CHEMISTRY: chemGrade.value ? `${chemGrade.value} (${chemBody.value})` : "",
-        PHYSICS: phyGrade.value ? `${phyGrade.value} (${phyBody.value})` : ""
-      };
+        PHYSICS: phyGrade.value ? `${phyGrade.value} (${phyBody.value})` : "",
+        REMARKS: form.remarks.value
+      }];
 
       const res = await fetch(SHEETBEST_URL, {
         method: "POST",
@@ -145,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
       form.innerHTML = `
         <div style="text-align:center;padding:40px">
           <h2 style="color:green">✅ Submission Successful</h2>
-          <p>Your information has been saved.</p>
+          <p>Your information has been saved successfully.</p>
           <button onclick="location.reload()">Submit Another</button>
         </div>
       `;
