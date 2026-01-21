@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const SHEETBEST_URL = "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
   const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
   const CLOUDINARY_PRESET = "cho_passports";
-  const ADMIN_PASSWORD = "CHO@2026Secure!"; // Admin password
+  const ADMIN_PASSWORD = "CHO@2026Secure!";
 
   const form = document.getElementById("indexForm");
   const submitBtn = form.querySelector("button[type='submit']");
@@ -14,38 +14,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let passportDataUrl = "";
 
-  // Passport preview
+  // ---------------- Passport Preview ----------------
   document.getElementById("passport").addEventListener("change", function () {
     previewContainer.innerHTML = "";
     const file = this.files[0];
-    if (file) {
-      if (!["image/jpeg", "image/png"].includes(file.type)) {
-        alert("Only JPG and PNG images allowed.");
-        this.value = "";
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image too large (max 5MB).");
-        this.value = "";
-        return;
-      }
-      const img = document.createElement("img");
-      img.style.maxWidth = "150px";
-      img.style.borderRadius = "8px";
-      img.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext("2d").drawImage(img, 0, 0);
-        passportDataUrl = canvas.toDataURL("image/jpeg");
-      };
-      img.src = URL.createObjectURL(file);
-      previewContainer.appendChild(img);
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      alert("Only JPG/PNG images allowed.");
+      this.value = "";
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image too large (max 5MB).");
+      this.value = "";
+      return;
+    }
+
+    const img = document.createElement("img");
+    img.style.maxWidth = "150px";
+    img.style.borderRadius = "8px";
+    img.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      passportDataUrl = canvas.toDataURL("image/jpeg");
+    };
+    img.src = URL.createObjectURL(file);
+    previewContainer.appendChild(img);
   });
 
-  // PDF download
+  // ---------------- PDF Download ----------------
   downloadPDFBtn.addEventListener("click", () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -53,6 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
     doc.setFontSize(18);
     doc.text("CHO Indexing Form", 105, y, { align: "center" });
     y += 10;
+
     if (passportDataUrl) {
       doc.addImage(passportDataUrl, "JPEG", 80, y, 50, 50);
       y += 60;
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     doc.save(`CHO_Form_${form.surname.value}_${form.firstname.value}.pdf`);
   });
 
-  // Admin login
+  // ---------------- Admin Access ----------------
   function requireAdminAccess() {
     const entered = prompt("🔒 Admin Password:");
     if (entered !== ADMIN_PASSWORD) { alert("❌ Access Denied"); return false; }
@@ -107,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Bulk ZIP download
+  // ---------------- Bulk ZIP Download ----------------
   downloadZipBtn.addEventListener("click", async () => {
     if (!requireAdminAccess()) return;
     downloadZipBtn.disabled = true;
@@ -142,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Live duplicate check
+  // ---------------- Live Duplicate Check ----------------
   async function checkDuplicateLive() {
     const surnameInput = form.surname;
     const firstnameInput = form.firstname;
@@ -194,11 +196,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   checkDuplicateLive();
 
-  // Form submission
+  // ---------------- Form Submission ----------------
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     submitBtn.disabled = true;
     submitBtn.innerText = "Checking for duplicates...";
+
     try {
       const file = document.getElementById("passport").files[0];
       if (!file) throw "Passport required";
