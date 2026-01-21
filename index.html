@@ -5,6 +5,7 @@
   <title>CHO INDEXING FORM</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.6.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -37,13 +38,18 @@
   <label>DATE OF BIRTH</label>
   <input type="date" name="dob" required>
 
+  <!-- UPDATED O-LEVEL TYPE -->
   <select name="olevel_type" required>
     <option value="">SELECT O-LEVEL TYPE</option>
     <option value="WAEC">WAEC</option>
     <option value="NECO">NECO</option>
+    <option value="NABTEB">NABTEB</option>
     <option value="WAEC / WAEC">WAEC / WAEC</option>
     <option value="NECO / NECO">NECO / NECO</option>
-    <option value="NECO / WAEC">NECO / WAEC</option>
+    <option value="NABTEB / NABTEB">NABTEB / NABTEB</option>
+    <option value="WAEC / NECO">WAEC / NECO</option>
+    <option value="NABTEB / WAEC">NABTEB / WAEC</option>
+    <option value="NABTEB / NECO">NABTEB / NECO</option>
   </select>
 
   <input name="olevel_year" placeholder="O-LEVEL YEAR(S)">
@@ -53,27 +59,57 @@
   <input name="alevel_year" placeholder="A-LEVEL YEAR">
   <input name="pro_cert" placeholder="PROFESSIONAL CERTIFICATE NUMBER">
 
+  <!-- SUBJECTS WITH NABTEB INCLUDED -->
   <input id="engGrade" placeholder="ENGLISH GRADE" required>
-  <select id="engBody"><option>WAEC</option><option>NECO</option></select>
+  <select id="engBody">
+    <option>WAEC</option>
+    <option>NECO</option>
+    <option>NABTEB</option>
+  </select>
 
   <input id="mathGrade" placeholder="MATHEMATICS GRADE" required>
-  <select id="mathBody"><option>WAEC</option><option>NECO</option></select>
+  <select id="mathBody">
+    <option>WAEC</option>
+    <option>NECO</option>
+    <option>NABTEB</option>
+  </select>
 
   <input id="bioGrade" placeholder="BIOLOGY GRADE">
-  <select id="bioBody"><option>WAEC</option><option>NECO</option></select>
+  <select id="bioBody">
+    <option>WAEC</option>
+    <option>NECO</option>
+    <option>NABTEB</option>
+  </select>
 
   <input id="chemGrade" placeholder="CHEMISTRY GRADE">
-  <select id="chemBody"><option>WAEC</option><option>NECO</option></select>
+  <select id="chemBody">
+    <option>WAEC</option>
+    <option>NECO</option>
+    <option>NABTEB</option>
+  </select>
 
   <input id="phyGrade" placeholder="PHYSICS GRADE">
-  <select id="phyBody"><option>WAEC</option><option>NECO</option></select>
+  <select id="phyBody">
+    <option>WAEC</option>
+    <option>NECO</option>
+    <option>NABTEB</option>
+  </select>
 
   <input name="remarks" placeholder="REMARKS">
 
   <button type="submit">SUBMIT</button>
-  <button type="button" id="downloadPDFBtn" style="margin-top:10px; background:#4caf50; color:#fff;">Download My Submission PDF</button>
-  <button type="button" id="adminLoginBtn" style="margin-top:10px; background:#333; color:#fff;">Admin Login</button>
-  <button type="button" id="downloadZipBtn" style="margin-top:10px; display:none;">Download All Passports (ZIP)</button>
+
+  <button type="button" id="downloadPDFBtn" style="margin-top:10px;background:#4caf50;color:#fff;">
+    Download My Submission PDF
+  </button>
+
+  <button type="button" id="adminLoginBtn" style="margin-top:10px;background:#333;color:#fff;">
+    Admin Login
+  </button>
+
+  <button type="button" id="downloadZipBtn" style="margin-top:10px;display:none;">
+    Download All Passports (ZIP)
+  </button>
 
   <div id="previewContainer" style="margin:15px 0;text-align:center;"></div>
 </form>
