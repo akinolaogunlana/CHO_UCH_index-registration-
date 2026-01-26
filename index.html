@@ -2,28 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CHO INDEXING – Retrieve & Full Edit</title>
+<title>CHO INDEXING – Review & Edit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; }
-h2 { text-align: center; }
-form { max-width: 650px; margin:auto; background:#fff; padding:25px; border-radius:10px; box-shadow:0 5px 20px rgba(0,0,0,.1); }
+h2 { text-align: center; margin-bottom:20px; }
+form { max-width: 700px; margin:auto; background:#fff; padding:25px; border-radius:10px; box-shadow:0 5px 20px rgba(0,0,0,.1); }
 input, select, button { width:100%; padding:10px; margin-top:10px; }
 button { border:none; cursor:pointer; font-weight:bold; }
 #retrieveBtn { background:#1e88e5; color:#fff; }
-#updateBtn { background:#2ecc71; color:#fff; }
-#downloadPDFBtn { background:#4caf50; color:#fff; display:none; }
+#submitBtn { background:#2ecc71; color:#fff; }
+#downloadPDFBtn { background:#4caf50; color:#fff; display:none; margin-top:5px; }
 #passportPreview img { max-width:120px; border-radius:8px; margin-top:10px; box-shadow:0 4px 15px rgba(0,0,0,0.15);}
+hr { margin:20px 0; }
 </style>
 </head>
+
 <body>
 
-<h2>CHO INDEXING – RETRIEVE & FULL EDIT DATA</h2>
+<h2>CHO INDEXING – Review & Edit</h2>
 
 <form id="indexForm">
-  <!-- Retrieval -->
-  <input name="surname" placeholder="SURNAME" required>
+
+  <!-- 🔐 Retrieval Section -->
+  <h3>Retrieve Record</h3>
+  <input name="firstname" placeholder="FIRSTNAME" required>
   <select name="bloodgroup" required>
     <option value="">SELECT BLOOD GROUP</option>
     <option>A+</option><option>A-</option>
@@ -37,14 +42,15 @@ button { border:none; cursor:pointer; font-weight:bold; }
     <option>WAEC / WAEC</option><option>NECO / NECO</option><option>NABTEB / NABTEB</option>
     <option>WAEC / NECO</option><option>NABTEB / WAEC</option><option>NABTEB / NECO</option>
   </select>
-  <button type="button" id="retrieveBtn">🔍 RETRIEVE MY RECORD</button>
+  <button type="button" id="retrieveBtn">🔍 Retrieve Record</button>
 
   <hr>
 
-  <!-- Editable -->
-  <input name="firstname" placeholder="FIRSTNAME">
+  <!-- ✏️ Editable Section -->
+  <h3>Review & Correct Details</h3>
+  <input name="surname" placeholder="SURNAME" required>
   <input name="othernames" placeholder="OTHERNAMES">
-  <select name="gender">
+  <select name="gender" required>
     <option value="">SELECT GENDER</option><option>MALE</option><option>FEMALE</option>
   </select>
   <input name="state" placeholder="STATE">
@@ -52,7 +58,7 @@ button { border:none; cursor:pointer; font-weight:bold; }
   <label>DATE OF BIRTH</label>
   <input type="date" name="dob">
 
-  <label>UPLOAD NEW PASSPORT (Optional, JPG/PNG max 5MB)</label>
+  <label>PASSPORT (JPG/PNG max 5MB)</label>
   <input type="file" id="passport">
   <div id="passportPreview"></div>
 
@@ -63,72 +69,71 @@ button { border:none; cursor:pointer; font-weight:bold; }
 
   <input id="engGrade" placeholder="ENGLISH GRADE">
   <select id="engBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+
   <input id="mathGrade" placeholder="MATHEMATICS GRADE">
   <select id="mathBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+
   <input id="bioGrade" placeholder="BIOLOGY GRADE">
   <select id="bioBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+
   <input id="chemGrade" placeholder="CHEMISTRY GRADE">
   <select id="chemBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+
   <input id="phyGrade" placeholder="PHYSICS GRADE">
   <select id="phyBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
 
   <input name="remarks" placeholder="REMARKS">
 
-  <button type="submit" id="updateBtn" disabled>✅ UPDATE MY INFORMATION</button>
-  <button type="button" id="downloadPDFBtn">📄 DOWNLOAD MY SLIP (PDF)</button>
+  <button type="submit" id="submitBtn">✅ Submit / Save Changes</button>
+  <button type="button" id="downloadPDFBtn">📄 Download Slip (PDF)</button>
 </form>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", ()=>{
 const SHEETBEST_URL = "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
+const CLOUDINARY_DESTROY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/destroy";
 const CLOUDINARY_PRESET = "cho_passports";
 
 const form = document.getElementById("indexForm");
 const retrieveBtn = document.getElementById("retrieveBtn");
-const updateBtn = document.getElementById("updateBtn");
+const submitBtn = document.getElementById("submitBtn");
 const downloadPDFBtn = document.getElementById("downloadPDFBtn");
 const passportInput = document.getElementById("passport");
 const previewContainer = document.getElementById("passportPreview");
 
 let recordId = null;
 let recordData = null;
+let previousPublicId = null;
 
-// Format DOB
 function formatDOB(d){ if(!d) return ""; const x=new Date(d); return `${String(x.getDate()).padStart(2,"0")}/${String(x.getMonth()+1).padStart(2,"0")}/${x.getFullYear()}`; }
 
-// 1️⃣ Retrieve Record
-retrieveBtn.onclick = async () => {
-  const surname = form.surname.value.trim().toUpperCase();
-  const blood = form.bloodgroup.value;
-  const olevel = form.olevel_type.value;
-  if(!surname||!blood||!olevel){ alert("Complete all fields"); return; }
-
+// ----- Retrieve by Firstname + Blood + Olevel -----
+retrieveBtn.onclick = async ()=>{
+  const firstname=form.firstname.value.trim().toUpperCase();
+  const blood=form.bloodgroup.value;
+  const olevel=form.olevel_type.value;
+  if(!firstname||!blood||!olevel){ alert("Complete all retrieval fields"); return; }
   try{
     const res = await fetch(SHEETBEST_URL);
     const data = await res.json();
-    const found = data.find(r=>r.SURNAME===surname && r.BLOOD_GROUP===blood && r.OLEVEL_TYPE===olevel);
+    const found = data.find(r=>r.FIRSTNAME===firstname && r.BLOOD_GROUP===blood && r.OLEVEL_TYPE===olevel);
     if(!found){ alert("❌ Record not found"); return; }
+
     recordId = found.id; recordData = found;
+    previousPublicId = found.PASSPORT_PUBLIC_ID || null;
 
-    // Fill form
-    Object.keys(found).forEach(k=>{
-      if(form[k]) form[k].value = found[k];
-    });
+    Object.keys(found).forEach(k=>{ if(form[k]) form[k].value=found[k]; });
 
-    updateBtn.disabled = false;
+    submitBtn.disabled=false;
     downloadPDFBtn.style.display="block";
-    alert("✅ Record retrieved successfully");
 
-    // Preview existing passport
-    if(found.PASSPORT){
-      previewContainer.innerHTML = `<img src="${found.PASSPORT}" alt="Passport">`;
-    }
-
-  }catch(err){ console.error(err); alert("Failed to retrieve"); }
+    if(found.PASSPORT) previewContainer.innerHTML=`<img src="${found.PASSPORT}">`;
+    alert("✅ Record retrieved. You can now edit any field.");
+  }catch(err){ console.error(err); alert("Failed to retrieve record"); }
 };
 
-// 2️⃣ Passport upload + previous deletion
+// ----- Passport Upload & Automatic Deletion -----
 passportInput.addEventListener("change", async ()=>{
   if(!recordData){ alert("Retrieve record first"); passportInput.value=""; return; }
   const file = passportInput.files[0];
@@ -139,7 +144,16 @@ passportInput.addEventListener("change", async ()=>{
   previewContainer.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
 
   try{
-    // Upload new
+    // 1️⃣ Delete previous passport if exists
+    if(previousPublicId){
+      await fetch(CLOUDINARY_DESTROY_URL,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ public_id: previousPublicId, api_key: "YOUR_API_KEY", timestamp: Math.floor(Date.now()/1000), signature:"SIGNATURE" })
+      });
+    }
+
+    // 2️⃣ Upload new passport
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_PRESET);
@@ -147,69 +161,70 @@ passportInput.addEventListener("change", async ()=>{
     const data = await res.json();
     if(!data.secure_url) throw "Upload failed";
 
-    // Delete previous via serverless endpoint
-    if(recordData.PASSPORT_PUBLIC_ID){
-      await fetch("/api/delete-passport", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ public_id:recordData.PASSPORT_PUBLIC_ID, secret:"CHO_DELETE_SECRET" })
-      });
-    }
-
     recordData.PASSPORT = data.secure_url;
     recordData.PASSPORT_PUBLIC_ID = data.public_id;
-    alert("✅ Passport updated, previous deleted if existed");
-
+    previousPublicId = data.public_id;
+    alert("✅ Passport uploaded successfully.");
   }catch(err){ console.error(err); alert("Passport upload failed"); }
 });
 
-// 3️⃣ Update Record
+// ----- Submit / Save Changes -----
 form.onsubmit = async e=>{
   e.preventDefault();
-  if(!recordId) return;
-
-  const payload = {
-    SURNAME: form.surname.value.trim().toUpperCase(),
-    BLOOD_GROUP: form.bloodgroup.value,
-    OLEVEL_TYPE: form.olevel_type.value,
-    FIRSTNAME: form.firstname.value,
-    OTHERNAMES: form.othernames.value,
-    GENDER: form.gender.value,
-    STATE: form.state.value,
-    LGA_CITY_TOWN: form.lga_city_town.value,
-    DATE_OF_BIRTH: formatDOB(form.dob.value),
-    OLEVEL_YEAR: form.olevel_year.value,
-    OLEVEL_EXAM_NUMBER: form.olevel_exam.value,
-    ALEVEL_TYPE: form.alevel_type.value,
-    ALEVEL_YEAR: form.alevel_year.value,
-    ENGLISH: `${engGrade.value} (${engBody.value})`,
-    MATHEMATICS: `${mathGrade.value} (${mathBody.value})`,
-    BIOLOGY: bioGrade.value?`${bioGrade.value} (${bioBody.value})`:"",
-    CHEMISTRY: chemGrade.value?`${chemGrade.value} (${chemBody.value})`:"",
-    PHYSICS: phyGrade.value?`${phyGrade.value} (${phyBody.value})`:"",
-    REMARKS: form.remarks.value,
-    PASSPORT: recordData.PASSPORT,
-    PASSPORT_PUBLIC_ID: recordData.PASSPORT_PUBLIC_ID
-  };
+  if(!recordData) recordData = {};
+  const firstname=form.firstname.value.trim().toUpperCase();
+  const surname=form.surname.value.trim().toUpperCase();
 
   try{
-    await fetch(`${SHEETBEST_URL}/${recordId}`, {
-      method:"PATCH",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    alert("✅ Information updated successfully");
-  }catch(err){ console.error(err); alert("Update failed"); }
+    const existing = await fetch(SHEETBEST_URL);
+    const data = await existing.json();
+    const duplicate = data.find(r=>(r.FIRSTNAME===firstname && r.SURNAME===surname) && (!recordId || r.id!==recordId));
+    if(duplicate){ alert("❌ Duplicate FIRSTNAME + SURNAME detected"); return; }
+
+    const payload = {
+      FIRSTNAME: firstname,
+      SURNAME: surname,
+      OTHERNAMES: form.othernames.value,
+      BLOOD_GROUP: form.bloodgroup.value,
+      OLEVEL_TYPE: form.olevel_type.value,
+      GENDER: form.gender.value,
+      STATE: form.state.value,
+      LGA_CITY_TOWN: form.lga_city_town.value,
+      DATE_OF_BIRTH: formatDOB(form.dob.value),
+      OLEVEL_YEAR: form.olevel_year.value,
+      OLEVEL_EXAM_NUMBER: form.olevel_exam.value,
+      ALEVEL_TYPE: form.alevel_type.value,
+      ALEVEL_YEAR: form.alevel_year.value,
+      ENGLISH: `${engGrade.value} (${engBody.value})`,
+      MATHEMATICS: `${mathGrade.value} (${mathBody.value})`,
+      BIOLOGY: bioGrade.value?`${bioGrade.value} (${bioBody.value})`:"",
+      CHEMISTRY: chemGrade.value?`${chemGrade.value} (${chemBody.value})`:"",
+      PHYSICS: phyGrade.value?`${phyGrade.value} (${phyBody.value})`:"",
+      REMARKS: form.remarks.value,
+      PASSPORT: recordData?.PASSPORT || "",
+      PASSPORT_PUBLIC_ID: recordData?.PASSPORT_PUBLIC_ID || ""
+    };
+
+    if(recordId){
+      await fetch(`${SHEETBEST_URL}/${recordId}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+      alert("✅ Record updated successfully");
+    }else{
+      await fetch(SHEETBEST_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify([payload]) });
+      alert("✅ Record submitted successfully");
+      recordId=payload.id; recordData=payload;
+      downloadPDFBtn.style.display="block";
+    }
+  }catch(err){ console.error(err); alert("Submission failed"); }
 };
 
-// 4️⃣ Download PDF
+// ----- Download PDF -----
 downloadPDFBtn.onclick = ()=>{
   if(!recordData) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  let y = 20;
+  let y=20;
   doc.setFontSize(16);
-  doc.text("CHO INDEXING SLIP", 105, y, {align:"center"}); y+=10;
+  doc.text("CHO INDEXING SLIP",105,y,{align:"center"}); y+=10;
 
   Object.entries(recordData).forEach(([k,v])=>{
     if(v && k!=="PASSPORT_PUBLIC_ID"){
@@ -220,10 +235,9 @@ downloadPDFBtn.onclick = ()=>{
     }
   });
 
-  doc.save(`CHO_${recordData.SURNAME}_SLIP.pdf`);
+  doc.save(`CHO_${recordData.FIRSTNAME}_SLIP.pdf`);
 };
 });
 </script>
-
 </body>
 </html>
