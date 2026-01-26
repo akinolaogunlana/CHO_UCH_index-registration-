@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CHO INDEXING – Retrieve & Edit</title>
+<title>CHO INDEXING – Retrieve & Full Edit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -19,7 +19,7 @@ button { border:none; cursor:pointer; font-weight:bold; }
 </head>
 <body>
 
-<h2>CHO INDEXING – RETRIEVE & EDIT DATA</h2>
+<h2>CHO INDEXING – RETRIEVE & FULL EDIT DATA</h2>
 
 <form id="indexForm">
   <!-- Retrieval -->
@@ -52,7 +52,6 @@ button { border:none; cursor:pointer; font-weight:bold; }
   <label>DATE OF BIRTH</label>
   <input type="date" name="dob">
 
-  <!-- Passport Upload -->
   <label>UPLOAD NEW PASSPORT (Optional, JPG/PNG max 5MB)</label>
   <input type="file" id="passport">
   <div id="passportPreview"></div>
@@ -95,8 +94,8 @@ const previewContainer = document.getElementById("passportPreview");
 let recordId = null;
 let recordData = null;
 
-// Format DOB for Sheet
-function formatDOB(d){ if(!d) return ""; const x = new Date(d); return `${String(x.getDate()).padStart(2,"0")}/${String(x.getMonth()+1).padStart(2,"0")}/${x.getFullYear()}`; }
+// Format DOB
+function formatDOB(d){ if(!d) return ""; const x=new Date(d); return `${String(x.getDate()).padStart(2,"0")}/${String(x.getMonth()+1).padStart(2,"0")}/${x.getFullYear()}`; }
 
 // 1️⃣ Retrieve Record
 retrieveBtn.onclick = async () => {
@@ -113,10 +112,6 @@ retrieveBtn.onclick = async () => {
     recordId = found.id; recordData = found;
 
     // Fill form
-    form.surname.disabled = true;
-    form.bloodgroup.disabled = true;
-    form.olevel_type.disabled = true;
-
     Object.keys(found).forEach(k=>{
       if(form[k]) form[k].value = found[k];
     });
@@ -133,15 +128,14 @@ retrieveBtn.onclick = async () => {
   }catch(err){ console.error(err); alert("Failed to retrieve"); }
 };
 
-// 2️⃣ Upload new passport + delete previous
+// 2️⃣ Passport upload + previous deletion
 passportInput.addEventListener("change", async ()=>{
-  if(!recordData) { alert("Retrieve record first"); passportInput.value=""; return; }
+  if(!recordData){ alert("Retrieve record first"); passportInput.value=""; return; }
   const file = passportInput.files[0];
   if(!file) return;
   if(!["image/jpeg","image/png"].includes(file.type)){ alert("Only JPG/PNG"); passportInput.value=""; return; }
   if(file.size>5*1024*1024){ alert("Max 5MB"); passportInput.value=""; return; }
 
-  // Preview
   previewContainer.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
 
   try{
@@ -149,16 +143,16 @@ passportInput.addEventListener("change", async ()=>{
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_PRESET);
-    const res = await fetch(CLOUDINARY_URL, { method:"POST", body:formData });
+    const res = await fetch(CLOUDINARY_URL,{method:"POST",body:formData});
     const data = await res.json();
     if(!data.secure_url) throw "Upload failed";
 
-    // Delete previous (server-side endpoint)
+    // Delete previous via serverless endpoint
     if(recordData.PASSPORT_PUBLIC_ID){
       await fetch("/api/delete-passport", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ public_id: recordData.PASSPORT_PUBLIC_ID, secret:"CHO_DELETE_SECRET" })
+        body:JSON.stringify({ public_id:recordData.PASSPORT_PUBLIC_ID, secret:"CHO_DELETE_SECRET" })
       });
     }
 
@@ -175,6 +169,9 @@ form.onsubmit = async e=>{
   if(!recordId) return;
 
   const payload = {
+    SURNAME: form.surname.value.trim().toUpperCase(),
+    BLOOD_GROUP: form.bloodgroup.value,
+    OLEVEL_TYPE: form.olevel_type.value,
     FIRSTNAME: form.firstname.value,
     OTHERNAMES: form.othernames.value,
     GENDER: form.gender.value,
@@ -206,7 +203,7 @@ form.onsubmit = async e=>{
 };
 
 // 4️⃣ Download PDF
-downloadPDFBtn.onclick = () => {
+downloadPDFBtn.onclick = ()=>{
   if(!recordData) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -225,8 +222,8 @@ downloadPDFBtn.onclick = () => {
 
   doc.save(`CHO_${recordData.SURNAME}_SLIP.pdf`);
 };
-
 });
 </script>
+
 </body>
 </html>
