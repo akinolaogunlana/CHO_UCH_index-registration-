@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let passportDataUrl = "";
-  let recordId = null; // 🔑 must exist to update
+  let recordKey = null; // combination of Surname + Blood + OLevel
 
   // ================= PASSPORT PREVIEW =================
   $("passport").addEventListener("change", function () {
@@ -46,12 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
     previewContainer.innerHTML = "";
     previewContainer.appendChild(img);
 
-    passportDataUrl = img.src; // temporarily store preview
+    passportDataUrl = img.src;
   });
 
   // ================= SEARCH =================
   $("searchBtn").addEventListener("click", async () => {
-
     const surname = $("searchSurname").value.trim().toUpperCase();
     const blood   = $("searchBloodGroup").value;
     const olevel  = $("searchOlevelType").value;
@@ -75,8 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // store correct record ID to allow PATCH update
-    recordId = record.id; // <-- check your sheetbest field name, usually "id"
+    // ✅ Store combination as key for update
+    recordKey = { SURNAME: surname, BLOOD_GROUP: blood, OLEVEL_TYPE: olevel };
 
     // ===== NORMAL FIELDS =====
     for (let el of form.elements) {
@@ -104,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         g.value = match[1].trim();
         b.value = match[2].trim();
       } else {
-        g.value = value;
+        g.value = value.trim();
         b.value = "";
       }
     });
@@ -123,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!recordId) {
+    if (!recordKey) {
       alert("Please search and load a record first. Cannot update a non-existing record.");
       return;
     }
@@ -132,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.innerText = "Saving...";
 
     try {
-
       let passportUrl = passportDataUrl;
 
       const file = $("passport").files[0];
@@ -141,11 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fd.append("file", file);
         fd.append("upload_preset", CLOUDINARY_PRESET);
 
-        const upload = await fetch(CLOUDINARY_URL, {
-          method: "POST",
-          body: fd
-        });
-
+        const upload = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
         const img = await upload.json();
         if (img?.secure_url) passportUrl = img.secure_url;
       }
@@ -178,8 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
         record[sub] = g ? `${g} (${b})` : "";
       });
 
-      // Always PATCH existing record
-      await fetch(`${SHEETBEST_URL}/${recordId}`, {
+      // ===== PATCH using combination key =====
+      const query = `?SURNAME=${encodeURIComponent(recordKey.SURNAME)}&BLOOD_GROUP=${encodeURIComponent(recordKey.BLOOD_GROUP)}&OLEVEL_TYPE=${encodeURIComponent(recordKey.OLEVEL_TYPE)}`;
+
+      await fetch(`${SHEETBEST_URL}${query}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(record)
