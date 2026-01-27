@@ -9,49 +9,54 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.6.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+
   <style>
+    /* Extra styling in case CSS not loaded */
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f8;
       padding: 20px;
     }
-    h2 {
+    h2, h3 {
       text-align: center;
-      margin-bottom: 15px;
     }
     form {
-      max-width: 750px;
+      max-width: 800px;
       margin: auto;
       background: #fff;
       padding: 25px;
-      border-radius: 10px;
+      border-radius: 12px;
       box-shadow: 0 5px 20px rgba(0,0,0,.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
     }
     input, select, button {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
-    }
-    label {
-      margin-top: 10px;
-      display: block;
-      font-weight: bold;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
     button {
-      border: none;
       cursor: pointer;
       font-weight: bold;
+      transition: all 0.2s ease;
     }
-    .primary { background:#1e88e5; color:#fff; }
-    .success { background:#2ecc71; color:#fff; }
-    .dark { background:#333; color:#fff; }
-    .hidden { display:none; }
-    hr { margin: 25px 0; }
-    #previewContainer img {
-      max-width: 150px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
+    button:hover { opacity: 0.9; }
+    .primary { background: #1e88e5; color: #fff; }
+    .success { background: #2ecc71; color: #fff; }
+    .dark { background: #333; color: #fff; }
+    .hidden { display: none; }
+    hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
+    #previewContainer img { max-width:150px; border-radius:8px; margin-top:10px; display:block; }
+    .section { margin-bottom: 20px; }
+    .flex-row { display:flex; gap:10px; flex-wrap:wrap; }
+    .flex-col { flex:1; }
   </style>
 </head>
 
@@ -61,99 +66,132 @@
 
 <form id="indexForm" enctype="multipart/form-data">
 
-  <!-- 🔍 RETRIEVE SECTION -->
-  <h3>🔍 Retrieve Your Record</h3>
+  <!-- ================= RETRIEVE ================= -->
+  <div class="section">
+    <h3>🔍 Retrieve Your Record</h3>
 
-  <input name="firstname" placeholder="FIRST NAME (Used for retrieval)" required>
+    <div class="flex-row">
+      <input name="firstname" placeholder="FIRST NAME (Used for retrieval)" required class="flex-col">
+      <select name="bloodgroup" required class="flex-col">
+        <option value="">SELECT BLOOD GROUP</option>
+        <option>A+</option><option>A-</option>
+        <option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option>
+        <option>O+</option><option>O-</option>
+      </select>
+      <select name="olevel_type" required class="flex-col">
+        <option value="">SELECT O-LEVEL TYPE</option>
+        <option>WAEC</option>
+        <option>NECO</option>
+        <option>NABTEB</option>
+        <option>WAEC / WAEC</option>
+        <option>NECO / NECO</option>
+        <option>NABTEB / NABTEB</option>
+        <option>WAEC / NECO</option>
+        <option>NABTEB / WAEC</option>
+        <option>NABTEB / NECO</option>
+      </select>
+    </div>
 
-  <select name="bloodgroup" required>
-    <option value="">SELECT BLOOD GROUP</option>
-    <option>A+</option><option>A-</option>
-    <option>B+</option><option>B-</option>
-    <option>AB+</option><option>AB-</option>
-    <option>O+</option><option>O-</option>
-  </select>
-
-  <select name="olevel_type" required>
-    <option value="">SELECT O-LEVEL TYPE</option>
-    <option>WAEC</option>
-    <option>NECO</option>
-    <option>NABTEB</option>
-    <option>WAEC / WAEC</option>
-    <option>NECO / NECO</option>
-    <option>NABTEB / NABTEB</option>
-    <option>WAEC / NECO</option>
-    <option>NABTEB / WAEC</option>
-    <option>NABTEB / NECO</option>
-  </select>
-
-  <button type="button" id="retrieveBtn" class="primary">
-    🔍 RETRIEVE MY RECORD
-  </button>
+    <button type="button" id="retrieveBtn" class="primary">🔍 RETRIEVE MY RECORD</button>
+  </div>
 
   <hr>
 
-  <!-- ✏️ EDITABLE SECTION -->
-  <h3>✏️ Review & Correct Your Details</h3>
+  <!-- ================= PERSONAL INFORMATION ================= -->
+  <div class="section">
+    <h3>✏️ Review & Edit Your Personal Details</h3>
 
-  <input name="surname" placeholder="SURNAME">
-  <input name="othernames" placeholder="OTHERNAMES">
+    <div class="flex-row">
+      <input name="surname" placeholder="SURNAME" class="flex-col">
+      <input name="othernames" placeholder="OTHERNAMES" class="flex-col">
+    </div>
 
-  <select name="gender">
-    <option value="">SELECT GENDER</option>
-    <option>MALE</option>
-    <option>FEMALE</option>
-  </select>
+    <div class="flex-row">
+      <select name="gender" class="flex-col">
+        <option value="">SELECT GENDER</option>
+        <option>MALE</option>
+        <option>FEMALE</option>
+      </select>
+      <input name="state" placeholder="STATE" class="flex-col">
+      <input name="lga_city_town" placeholder="LGA / CITY / TOWN" class="flex-col">
+    </div>
 
-  <input name="state" placeholder="STATE">
-  <input name="lga_city_town" placeholder="LGA / CITY / TOWN">
+    <label>DATE OF BIRTH (DD/MM/YYYY)</label>
+    <input name="dob" placeholder="e.g. 14/06/1998">
 
-  <label>DATE OF BIRTH (DD/MM/YYYY)</label>
-  <input name="dob" placeholder="e.g. 14/06/1998">
+    <div class="flex-row">
+      <input name="cadre" placeholder="CADRE" class="flex-col">
+      <input name="remarks" placeholder="REMARKS" class="flex-col">
+    </div>
 
-  <input name="olevel_year" placeholder="O-LEVEL YEAR(S)">
-  <input name="olevel_exam" placeholder="O-LEVEL EXAM NUMBER">
+    <label>UPLOAD / CHANGE PASSPORT (JPG / PNG)</label>
+    <input type="file" id="passport" accept="image/jpeg,image/png">
+    <div id="previewContainer"></div>
+  </div>
 
-  <input name="alevel_type" placeholder="A-LEVEL TYPE">
-  <input name="alevel_year" placeholder="A-LEVEL YEAR">
+  <hr>
 
-  <label>UPLOAD / CHANGE PASSPORT (JPG / PNG)</label>
-  <input type="file" id="passport" accept="image/jpeg,image/png">
+  <!-- ================= EDUCATION ================= -->
+  <div class="section">
+    <h3>📚 Educational Background</h3>
 
-  <div id="previewContainer"></div>
+    <div class="flex-row">
+      <input name="olevel_year" placeholder="O-LEVEL YEAR(S)" class="flex-col">
+      <input name="olevel_exam" placeholder="O-LEVEL EXAM NUMBER" class="flex-col">
+    </div>
 
-  <input id="engGrade" placeholder="ENGLISH GRADE">
-  <select id="engBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    <div class="flex-row">
+      <input name="alevel_type" placeholder="A-LEVEL TYPE" class="flex-col">
+      <input name="alevel_year" placeholder="A-LEVEL YEAR" class="flex-col">
+    </div>
+  </div>
 
-  <input id="mathGrade" placeholder="MATHEMATICS GRADE">
-  <select id="mathBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+  <hr>
 
-  <input id="bioGrade" placeholder="BIOLOGY GRADE">
-  <select id="bioBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+  <!-- ================= SUBJECT GRADES ================= -->
+  <div class="section">
+    <h3>📝 Subject Grades</h3>
 
-  <input id="chemGrade" placeholder="CHEMISTRY GRADE">
-  <select id="chemBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    <div class="flex-row">
+      <input id="engGrade" placeholder="ENGLISH GRADE" class="flex-col">
+      <select id="engBody" class="flex-col"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    </div>
 
-  <input id="phyGrade" placeholder="PHYSICS GRADE">
-  <select id="phyBody"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    <div class="flex-row">
+      <input id="mathGrade" placeholder="MATHEMATICS GRADE" class="flex-col">
+      <select id="mathBody" class="flex-col"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    </div>
 
-  <input name="remarks" placeholder="REMARKS">
+    <div class="flex-row">
+      <input id="bioGrade" placeholder="BIOLOGY GRADE" class="flex-col">
+      <select id="bioBody" class="flex-col"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    </div>
 
-  <button type="submit" id="submitBtn" class="success">
-    ✅ SAVE / UPDATE MY INFORMATION
-  </button>
+    <div class="flex-row">
+      <input id="chemGrade" placeholder="CHEMISTRY GRADE" class="flex-col">
+      <select id="chemBody" class="flex-col"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    </div>
 
-  <button type="button" id="downloadPDFBtn" class="success hidden">
-    📄 DOWNLOAD MY SLIP (PDF)
-  </button>
+    <div class="flex-row">
+      <input id="phyGrade" placeholder="PHYSICS GRADE" class="flex-col">
+      <select id="phyBody" class="flex-col"><option>WAEC</option><option>NECO</option><option>NABTEB</option></select>
+    </div>
 
-  <button type="button" id="adminLoginBtn" class="dark">
-    🔒 ADMIN LOGIN
-  </button>
+  </div>
 
-  <button type="button" id="downloadZipBtn" class="hidden">
-    📦 DOWNLOAD ALL PASSPORTS (ZIP)
-  </button>
+  <hr>
+
+  <!-- ================= ACTION BUTTONS ================= -->
+  <div class="section flex-row">
+    <button type="submit" id="submitBtn" class="success flex-col">✅ SAVE / UPDATE MY INFORMATION</button>
+    <button type="button" id="downloadPDFBtn" class="success hidden flex-col">📄 DOWNLOAD MY SLIP (PDF)</button>
+  </div>
+
+  <div class="section flex-row">
+    <button type="button" id="adminLoginBtn" class="dark flex-col">🔒 ADMIN LOGIN</button>
+    <button type="button" id="downloadZipBtn" class="hidden flex-col">📦 DOWNLOAD ALL PASSPORTS (ZIP)</button>
+  </div>
 
 </form>
 
