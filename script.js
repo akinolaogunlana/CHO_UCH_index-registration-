@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
-
   const $ = id => document.getElementById(id);
 
   // ================= CONFIG =================
-  const SHEETBEST_URL = "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
-  const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
+  const SHEETBEST_URL =
+    "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
+  const CLOUDINARY_URL =
+    "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
   const CLOUDINARY_PRESET = "cho_passports";
 
   const form = $("indexForm");
@@ -13,15 +14,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ================= SUBJECT ELEMENTS =================
   const subjects = {
-    ENGLISH:     { grade: $("engGrade"),  body: $("engBody") },
+    ENGLISH: { grade: $("engGrade"), body: $("engBody") },
     MATHEMATICS: { grade: $("mathGrade"), body: $("mathBody") },
-    BIOLOGY:     { grade: $("bioGrade"),  body: $("bioBody") },
-    CHEMISTRY:   { grade: $("chemGrade"), body: $("chemBody") },
-    PHYSICS:     { grade: $("phyGrade"),  body: $("phyBody") }
+    BIOLOGY: { grade: $("bioGrade"), body: $("bioBody") },
+    CHEMISTRY: { grade: $("chemGrade"), body: $("chemBody") },
+    PHYSICS: { grade: $("phyGrade"), body: $("phyBody") }
   };
 
   let passportDataUrl = "";
-  let recordId = null; // SheetBest _id
+  let recordId = null; // store ID for update
+  let loadedRecord = null; // store full record to merge
 
   // ================= PASSPORT PREVIEW =================
   $("passport").addEventListener("change", function () {
@@ -42,91 +44,83 @@ document.addEventListener("DOMContentLoaded", () => {
     previewContainer.innerHTML = "";
     previewContainer.appendChild(img);
 
-    passportDataUrl = img.src; // temporary preview
+    passportDataUrl = img.src; // temporarily store preview
   });
 
   // ================= SEARCH =================
   $("searchBtn").addEventListener("click", async () => {
-
     const surname = $("searchSurname").value.trim().toUpperCase();
-    const blood   = $("searchBloodGroup").value.trim();
-    const olevel  = $("searchOlevelType").value.trim();
+    const blood = $("searchBloodGroup").value;
+    const olevel = $("searchOlevelType").value;
 
     if (!surname || !blood || !olevel) {
-      alert("Surname, Blood Group and O-Level Type are required.");
+      alert("Surname, blood group and O-Level type required.");
       return;
     }
 
-    try {
-      const res = await fetch(SHEETBEST_URL);
-      const data = await res.json();
+    const res = await fetch(SHEETBEST_URL);
+    const data = await res.json();
 
-      // Find record using the 3 criteria
-      const record = data.find(r =>
-        r.SURNAME?.toUpperCase() === surname &&
-        r.BLOOD_GROUP === blood &&
-        r.OLEVEL_TYPE === olevel
-      );
+    // search by Surname + Blood Group + O-Level Type
+    const record = data.find(r =>
+      r.SURNAME?.toUpperCase() === surname &&
+      r.BLOOD_GROUP === blood &&
+      r.OLEVEL_TYPE === olevel
+    );
 
-      if (!record) {
-        alert("No record found.");
-        recordId = null;
+    if (!record) {
+      alert("No record found.");
+      return;
+    }
+
+    loadedRecord = record; // store full record for merging
+    recordId = record.ID; // must match your ID column in SheetBest
+
+    // ===== NORMAL FIELDS =====
+    for (let el of form.elements) {
+      if (!el.name) continue;
+      const key = el.name.toUpperCase();
+      if (record[key] !== undefined) el.value = record[key];
+    }
+
+    // ===== SUBJECTS =====
+    Object.keys(subjects).forEach(sub => {
+      const value = record[sub];
+      const g = subjects[sub].grade;
+      const b = subjects[sub].body;
+
+      if (!g || !b) return;
+
+      if (!value) {
+        g.value = "";
+        b.value = "";
         return;
       }
 
-      // Store SheetBest _id for updating
-      recordId = record._id;
-
-      // ===== NORMAL FIELDS =====
-      for (let el of form.elements) {
-        if (!el.name) continue;
-        const key = el.name.toUpperCase();
-        if (record[key] !== undefined) el.value = record[key];
+      const match = value.match(/^(.+?)\s*\((.+?)\)$/);
+      if (match) {
+        g.value = match[1].trim();
+        b.value = match[2].trim();
+      } else {
+        g.value = value;
+        b.value = "";
       }
+    });
 
-      // ===== SUBJECTS =====
-      Object.keys(subjects).forEach(sub => {
-        const value = record[sub];
-        const g = subjects[sub].grade;
-        const b = subjects[sub].body;
-
-        if (!g || !b) return;
-
-        if (!value) {
-          g.value = "";
-          b.value = "";
-          return;
-        }
-
-        const match = value.match(/^(.+?)\s*\((.+?)\)$/);
-        if (match) {
-          g.value = match[1].trim();
-          b.value = match[2].trim();
-        } else {
-          g.value = value;
-          b.value = "";
-        }
-      });
-
-      // ===== PASSPORT =====
-      if (record.PASSPORT) {
-        passportDataUrl = record.PASSPORT;
-        previewContainer.innerHTML = `<img src="${record.PASSPORT}" style="max-width:150px;border-radius:8px">`;
-      }
-
-      alert("✅ Record loaded successfully");
-
-    } catch (err) {
-      console.error(err);
-      alert("ERROR fetching records: " + err);
+    // ===== PASSPORT =====
+    if (record.PASSPORT) {
+      passportDataUrl = record.PASSPORT;
+      previewContainer.innerHTML = `<img src="${record.PASSPORT}" style="max-width:150px;border-radius:8px">`;
     }
+
+    alert("✅ Record loaded successfully");
   });
 
-  // ================= SUBMIT/UPDATE =================
+  // ================= SUBMIT =================
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!recordId) {
+    if (!recordId || !loadedRecord) {
       alert("Please search and load a record first. Cannot update a non-existing record.");
       return;
     }
@@ -143,40 +137,46 @@ document.addEventListener("DOMContentLoaded", () => {
         fd.append("file", file);
         fd.append("upload_preset", CLOUDINARY_PRESET);
 
-        const upload = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+        const upload = await fetch(CLOUDINARY_URL, {
+          method: "POST",
+          body: fd
+        });
+
         const img = await upload.json();
         if (img?.secure_url) passportUrl = img.secure_url;
       }
 
-      // ===== BUILD RECORD =====
-      const record = {
-        SURNAME: form.surname?.value?.toUpperCase() || "",
-        FIRSTNAME: form.firstname?.value?.toUpperCase() || "",
-        OTHERNAMES: form.othernames?.value || "",
-        CADRE: "CHO",
-        GENDER: form.gender?.value || "",
-        BLOOD_GROUP: form.blood_group?.value || "",
-        STATE: form.state?.value || "",
-        LGA_CITY_TOWN: form.lga_city_town?.value || "",
-        DATE_OF_BIRTH: form.date_of_birth?.value || "",
-        OLEVEL_TYPE: form.olevel_type?.value || "",
-        OLEVEL_YEAR: form.olevel_year?.value || "",
-        OLEVEL_EXAM_NUMBER: form.olevel_exam_number?.value || "",
-        ALEVEL_TYPE: form.alevel_type?.value || "",
-        ALEVEL_YEAR: form.alevel_year?.value || "",
-        PROFESSIONAL_CERTIFICATE_NUMBER: form.professional_certificate_number?.value || "",
-        PASSPORT: passportUrl,
-        REMARKS: form.remarks?.value || ""
-      };
+      // ===== MERGE EXISTING RECORD WITH FORM =====
+      const record = { ...loadedRecord }; // copy full record
 
-      // ===== SUBJECTS =====
+      // overwrite only fields that exist in form
+      record.SURNAME = form.surname?.value?.toUpperCase() || record.SURNAME;
+      record.FIRSTNAME = form.firstname?.value?.toUpperCase() || record.FIRSTNAME;
+      record.OTHERNAMES = form.othernames?.value || record.OTHERNAMES;
+      record.GENDER = form.gender?.value || record.GENDER;
+      record.BLOOD_GROUP = form.blood_group?.value || record.BLOOD_GROUP;
+      record.STATE = form.state?.value || record.STATE;
+      record.LGA_CITY_TOWN = form.lga_city_town?.value || record.LGA_CITY_TOWN;
+      record.DATE_OF_BIRTH = form.date_of_birth?.value || record.DATE_OF_BIRTH;
+      record.OLEVEL_TYPE = form.olevel_type?.value || record.OLEVEL_TYPE;
+      record.OLEVEL_YEAR = form.olevel_year?.value || record.OLEVEL_YEAR;
+      record.OLEVEL_EXAM_NUMBER = form.olevel_exam_number?.value || record.OLEVEL_EXAM_NUMBER;
+      record.ALEVEL_TYPE = form.alevel_type?.value || record.ALEVEL_TYPE;
+      record.ALEVEL_YEAR = form.alevel_year?.value || record.ALEVEL_YEAR;
+      record.PROFESSIONAL_CERTIFICATE_NUMBER = form.professional_certificate_number?.value || record.PROFESSIONAL_CERTIFICATE_NUMBER;
+      record.REMARKS = form.remarks?.value || record.REMARKS;
+
+      // subjects: overwrite only if grade is provided
       Object.keys(subjects).forEach(sub => {
         const g = subjects[sub].grade?.value?.replace(/\(.+?\)/g, "").trim() || "";
         const b = subjects[sub].body?.value || "";
-        record[sub] = g ? `${g} (${b})` : "";
+        if (g) record[sub] = `${g} (${b})`;
       });
 
-      // ===== PATCH USING _id =====
+      // passport
+      if (passportUrl) record.PASSPORT = passportUrl;
+
+      // ===== PATCH UPDATE =====
       await fetch(`${SHEETBEST_URL}/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -188,10 +188,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error(err);
-      alert("ERROR updating record: " + err);
+      alert("ERROR: " + err);
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT";
     }
   });
-
 });
