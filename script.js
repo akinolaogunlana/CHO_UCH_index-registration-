@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const passportInput = document.getElementById("passport");
   const previewContainer = document.getElementById("previewContainer");
   const downloadPDFBtn = document.getElementById("downloadPDFBtn");
+  const retrieveBtn = document.getElementById("retrieveBtn");
 
   /* ================= STATE ================= */
   let currentRowNumber = null;
@@ -55,20 +56,19 @@ document.addEventListener("DOMContentLoaded", () => {
     previewContainer.appendChild(img);
   });
 
-  /* ================= RETRIEVE BUTTON ================= */
-  const retrieveBtn = document.createElement("button");
-  retrieveBtn.type = "button";
-  retrieveBtn.textContent = "Retrieve & Edit My Record";
-  retrieveBtn.style.marginBottom = "15px";
-  form.prepend(retrieveBtn);
-
+  /* ================= RETRIEVE ================= */
   retrieveBtn.addEventListener("click", async () => {
+    retrieveBtn.disabled = true;
+    retrieveBtn.textContent = "Retrieving...";
+
     const firstname = form.firstname.value.trim().toUpperCase();
-    const bloodgroup = form.bloodgroup.value.toUpperCase();
-    const olevelType = form.olevel_type.value.toUpperCase();
+    const bloodgroup = form.bloodgroup.value.trim().toUpperCase();
+    const olevelType = form.olevel_type.value.trim().toUpperCase();
 
     if (!firstname || !bloodgroup || !olevelType) {
       alert("Enter FIRST NAME, BLOOD GROUP and O-LEVEL TYPE");
+      retrieveBtn.disabled = false;
+      retrieveBtn.textContent = "Retrieve & Edit My Record";
       return;
     }
 
@@ -90,15 +90,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       populateForm(record);
-      currentRowNumber = record._rowNumber;
+      currentRowNumber = record._rowNumber || null;
       currentPassportUrl = record["PASSPORT"] || "";
 
-      alert("Record retrieved successfully. You can now edit.");
+      alert("✅ Record retrieved successfully. You can now edit and resubmit.");
       downloadPDFBtn.style.display = "inline-block";
 
     } catch (err) {
       console.error(err);
       alert("Error retrieving record. Check internet or sheet setup.");
+    } finally {
+      retrieveBtn.disabled = false;
+      retrieveBtn.textContent = "Retrieve & Edit My Record";
     }
   });
 
@@ -111,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     form.cadre.value = r["CADRE"] || "";
     form.state.value = r["STATE"] || "";
     form.lga_city_town.value = r["LGA/CITY/TOWN"] || "";
-    form.dob.value = r["DOB"] || ""; // manual DOB input
+    form.dob.value = r["DOB"] || ""; // manual input
     form.bloodgroup.value = r["BLOOD GROUP"] || "";
     form.olevel_type.value = r["O LEVEL TYPE"] || "";
     form.olevel_year.value = r["O LEVEL YEAR"] || "";
@@ -181,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
-      alert("Saved successfully");
+      alert("✅ Saved successfully");
       downloadPDF();
 
     } catch (err) {
@@ -190,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  /* ================= PDF ================= */
+  /* ================= PDF DOWNLOAD ================= */
   function downloadPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -216,14 +219,17 @@ document.addEventListener("DOMContentLoaded", () => {
       ["DOB", form.dob.value],
       ["O LEVEL TYPE", form.olevel_type.value],
       ["O LEVEL YEAR", form.olevel_year.value],
-      ["O LEVEL EXAM", form.olevel_exam.value]
+      ["O LEVEL EXAM", form.olevel_exam.value],
+      ["REMARKS", form.remarks.value]
     ].forEach(([k, v]) => {
       doc.text(`${k}: ${v}`, 20, y);
       y += 8;
+      if (y > 280) doc.addPage(), y = 20;
     });
 
     doc.save(`CHO_SLIP_${form.firstname.value}.pdf`);
   }
 
   downloadPDFBtn.addEventListener("click", downloadPDF);
+
 });
