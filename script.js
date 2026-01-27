@@ -28,16 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
     img.style.maxWidth = "150px";
     img.style.borderRadius = "8px";
-    img.src = URL.createObjectURL(file);
 
     previewContainer.innerHTML = "";
     previewContainer.appendChild(img);
-
-    const reader = new FileReader();
-    reader.onload = () => passportDataUrl = reader.result;
-    reader.readAsDataURL(file);
   });
 
   // ================= SEARCH RECORD =================
@@ -65,26 +61,17 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     if (!record) {
-      document.getElementById("searchWarning").innerText =
-        "No record found.";
+      document.getElementById("searchWarning").innerText = "No record found.";
       return;
     }
 
-    // Autofill
-    Object.keys(form.elements).forEach(k => {
-      if (record[k?.toUpperCase()]) {
-        form[k].value = record[k.toUpperCase()];
+    // ===== Autofill safely =====
+    for (let el of form.elements) {
+      const key = el.name?.toUpperCase();
+      if (key && record[key]) {
+        el.value = record[key];
       }
-    });
-
-    form.surname.value = record.SURNAME;
-    form.firstname.value = record.FIRSTNAME;
-    form.othernames.value = record.OTHERNAMES;
-    form.gender.value = record.GENDER;
-    form.state.value = record.STATE;
-    form.lga_city_town.value = record.LGA_CITY_TOWN;
-    form.dob.value = record.DATE_OF_BIRTH;
-    form.remarks.value = record.REMARKS;
+    }
 
     if (record.PASSPORT) {
       passportDataUrl = record.PASSPORT;
@@ -103,10 +90,11 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.innerText = "Saving...";
 
     try {
-      const dob = form.dob.value.trim();
 
-      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob))
-        throw "Date must be DD/MM/YYYY";
+      const dob = form.dob.value.trim();
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+        throw "Date must be in DD/MM/YYYY format";
+      }
 
       let passportUrl = passportDataUrl;
 
@@ -122,6 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const result = await upload.json();
+
+        if (!result.secure_url) {
+          throw "Passport upload failed";
+        }
+
         passportUrl = result.secure_url;
       }
 
@@ -139,11 +132,19 @@ document.addEventListener("DOMContentLoaded", () => {
         LGA_CITY_TOWN: form.lga_city_town.value,
         DATE_OF_BIRTH: dob,
         PASSPORT: passportUrl,
-        ENGLISH: `${engGrade.value} (${engBody.value})`,
-        MATHEMATICS: `${mathGrade.value} (${mathBody.value})`,
-        BIOLOGY: bioGrade.value ? `${bioGrade.value} (${bioBody.value})` : "",
-        CHEMISTRY: chemGrade.value ? `${chemGrade.value} (${chemBody.value})` : "",
-        PHYSICS: phyGrade.value ? `${phyGrade.value} (${phyBody.value})` : "",
+
+        ENGLISH: `${form.engGrade.value} (${form.engBody.value})`,
+        MATHEMATICS: `${form.mathGrade.value} (${form.mathBody.value})`,
+        BIOLOGY: form.bioGrade.value
+          ? `${form.bioGrade.value} (${form.bioBody.value})`
+          : "",
+        CHEMISTRY: form.chemGrade.value
+          ? `${form.chemGrade.value} (${form.chemBody.value})`
+          : "",
+        PHYSICS: form.phyGrade.value
+          ? `${form.phyGrade.value} (${form.phyBody.value})`
+          : "",
+
         REMARKS: form.remarks.value
       };
 
