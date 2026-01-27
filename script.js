@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  const $ = (id) => document.getElementById(id);
+
   // ================= CONFIG =================
   const SHEETBEST_URL =
     "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
@@ -9,31 +11,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const CLOUDINARY_PRESET = "cho_passports";
 
-  const form = document.getElementById("indexForm");
+  const form = $("indexForm");
   const submitBtn = form.querySelector("button[type='submit']");
-  const previewContainer = document.getElementById("previewContainer");
+  const previewContainer = $("previewContainer");
 
-  // ✅ DEFINE SUBJECT INPUTS
-  const engGrade = document.getElementById("engGrade");
-  const engBody  = document.getElementById("engBody");
-
-  const mathGrade = document.getElementById("mathGrade");
-  const mathBody  = document.getElementById("mathBody");
-
-  const bioGrade = document.getElementById("bioGrade");
-  const bioBody  = document.getElementById("bioBody");
-
-  const chemGrade = document.getElementById("chemGrade");
-  const chemBody  = document.getElementById("chemBody");
-
-  const phyGrade = document.getElementById("phyGrade");
-  const phyBody  = document.getElementById("phyBody");
+  // ================= SUBJECT ELEMENTS =================
+  const subjects = {
+    ENGLISH:   { grade: $("engGrade"),  body: $("engBody") },
+    MATHEMATICS:{ grade: $("mathGrade"), body: $("mathBody") },
+    BIOLOGY:   { grade: $("bioGrade"),  body: $("bioBody") },
+    CHEMISTRY: { grade: $("chemGrade"), body: $("chemBody") },
+    PHYSICS:   { grade: $("phyGrade"),  body: $("phyBody") }
+  };
 
   let passportDataUrl = "";
   let recordId = null;
 
   // ================= PASSPORT PREVIEW =================
-  document.getElementById("passport").addEventListener("change", function () {
+  $("passport").addEventListener("change", function () {
     const file = this.files[0];
     if (!file) return;
 
@@ -53,16 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ================= SEARCH =================
-  document.getElementById("searchBtn").addEventListener("click", async () => {
+  $("searchBtn").addEventListener("click", async () => {
 
-    const surname =
-      document.getElementById("searchSurname").value.trim().toUpperCase();
-
-    const blood =
-      document.getElementById("searchBloodGroup").value;
-
-    const olevel =
-      document.getElementById("searchOlevelType").value;
+    const surname = $("searchSurname").value.trim().toUpperCase();
+    const blood   = $("searchBloodGroup").value;
+    const olevel  = $("searchOlevelType").value;
 
     if (!surname || !blood || !olevel) {
       alert("Surname, blood group and O-Level type required.");
@@ -85,60 +75,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
     recordId = record._id;
 
-    // ===== BASIC FIELDS =====
+    // ===== NORMAL FIELDS =====
     for (let el of form.elements) {
       if (!el.name) continue;
 
       const key = el.name.toUpperCase();
-
-      // ❌ skip subject fields
-      if (
-        key === "ENGLISH" ||
-        key === "MATHEMATICS" ||
-        key === "BIOLOGY" ||
-        key === "CHEMISTRY" ||
-        key === "PHYSICS"
-      ) continue;
-
       if (record[key] !== undefined) {
         el.value = record[key];
       }
     }
 
-    // ===== SUBJECT SPLIT =====
-    const split = (val) => {
-      if (!val) return ["", ""];
-      const m = val.match(/^(.+?)\s*\((.+?)\)$/);
-      return m ? [m[1], m[2]] : [val, ""];
-    };
+    // ===== SUBJECTS =====
+    Object.keys(subjects).forEach(sub => {
+      const value = record[sub];
+      const g = subjects[sub].grade;
+      const b = subjects[sub].body;
 
-    let v;
+      if (!g || !b) return;
 
-    v = split(record.ENGLISH);
-    engGrade.value = v[0];
-    engBody.value = v[1];
+      if (!value) {
+        g.value = "";
+        b.value = "";
+        return;
+      }
 
-    v = split(record.MATHEMATICS);
-    mathGrade.value = v[0];
-    mathBody.value = v[1];
-
-    v = split(record.BIOLOGY);
-    bioGrade.value = v[0];
-    bioBody.value = v[1];
-
-    v = split(record.CHEMISTRY);
-    chemGrade.value = v[0];
-    chemBody.value = v[1];
-
-    v = split(record.PHYSICS);
-    phyGrade.value = v[0];
-    phyBody.value = v[1];
+      const match = value.match(/^(.+?)\s*\((.+?)\)$/);
+      if (match) {
+        g.value = match[1].trim();
+        b.value = match[2].trim();
+      } else {
+        g.value = value;
+        b.value = "";
+      }
+    });
 
     // ===== PASSPORT =====
     if (record.PASSPORT) {
       passportDataUrl = record.PASSPORT;
       previewContainer.innerHTML =
-        `<img src="${record.PASSPORT}" style="max-width:150px;border-radius:8px;">`;
+        `<img src="${record.PASSPORT}" style="max-width:150px;border-radius:8px">`;
     }
 
     alert("✅ Record loaded successfully");
@@ -155,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let passportUrl = passportDataUrl;
 
-      const file = document.getElementById("passport").files[0];
+      const file = $("passport").files[0];
       if (file) {
         const fd = new FormData();
         fd.append("file", file);
@@ -169,13 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = await upload.json();
         passportUrl = img.secure_url;
       }
-
-      // 🔥 CLEAN DUPLICATES
-      const clean = (grade, body) => {
-        if (!grade) return "";
-        const g = grade.replace(/\(.+?\)/g, "").trim();
-        return `${g} (${body})`;
-      };
 
       const record = {
         SURNAME: form.surname.value.toUpperCase(),
@@ -191,15 +159,16 @@ document.addEventListener("DOMContentLoaded", () => {
         OLEVEL_YEAR: form.olevel_year.value,
         OLEVEL_EXAM_NUMBER: form.olevel_exam.value,
         PASSPORT: passportUrl,
-
-        ENGLISH: clean(engGrade.value, engBody.value),
-        MATHEMATICS: clean(mathGrade.value, mathBody.value),
-        BIOLOGY: clean(bioGrade.value, bioBody.value),
-        CHEMISTRY: clean(chemGrade.value, chemBody.value),
-        PHYSICS: clean(phyGrade.value, phyBody.value),
-
         REMARKS: form.remarks.value
       };
+
+      // ===== SUBJECT SAVE =====
+      Object.keys(subjects).forEach(sub => {
+        const g = subjects[sub].grade?.value?.replace(/\(.+?\)/g, "").trim();
+        const b = subjects[sub].body?.value || "";
+
+        record[sub] = g ? `${g} (${b})` : "";
+      });
 
       const url = recordId
         ? `${SHEETBEST_URL}/${recordId}`
@@ -220,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
       location.reload();
 
     } catch (err) {
-      alert("Error: " + err);
+      alert("ERROR: " + err);
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT";
     }
