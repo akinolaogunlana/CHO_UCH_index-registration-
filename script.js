@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const $ = (id) => document.getElementById(id);
+  const $ = id => document.getElementById(id);
 
   // ================= CONFIG =================
   const SHEETBEST_URL =
@@ -17,11 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ================= SUBJECT ELEMENTS =================
   const subjects = {
-    ENGLISH:   { grade: $("engGrade"),  body: $("engBody") },
+    ENGLISH:    { grade: $("engGrade"),  body: $("engBody") },
     MATHEMATICS:{ grade: $("mathGrade"), body: $("mathBody") },
-    BIOLOGY:   { grade: $("bioGrade"),  body: $("bioBody") },
-    CHEMISTRY: { grade: $("chemGrade"), body: $("chemBody") },
-    PHYSICS:   { grade: $("phyGrade"),  body: $("phyBody") }
+    BIOLOGY:    { grade: $("bioGrade"),  body: $("bioBody") },
+    CHEMISTRY:  { grade: $("chemGrade"), body: $("chemBody") },
+    PHYSICS:    { grade: $("phyGrade"),  body: $("phyBody") }
   };
 
   let passportDataUrl = "";
@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     previewContainer.innerHTML = "";
     previewContainer.appendChild(img);
+
+    passportDataUrl = img.src; // store preview as data URL temporarily
   });
 
   // ================= SEARCH =================
@@ -78,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // ===== NORMAL FIELDS =====
     for (let el of form.elements) {
       if (!el.name) continue;
-
       const key = el.name.toUpperCase();
       if (record[key] !== undefined) {
         el.value = record[key];
@@ -142,38 +143,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const img = await upload.json();
-        passportUrl = img.secure_url;
+        if (img?.secure_url) passportUrl = img.secure_url;
       }
 
+      // ===== BUILD RECORD =====
       const record = {
-        SURNAME: form.surname.value.toUpperCase(),
-        FIRSTNAME: form.firstname.value.toUpperCase(),
-        OTHERNAMES: form.othernames.value.toUpperCase(),
+        SURNAME: form.surname?.value?.toUpperCase() || "",
+        FIRSTNAME: form.firstname?.value?.toUpperCase() || "",
+        OTHERNAMES: form.othernames?.value?.toUpperCase() || "",
         CADRE: "CHO",
-        GENDER: form.gender.value,
-        BLOOD_GROUP: form.bloodgroup.value,
-        STATE: form.state.value,
-        LGA_CITY_TOWN: form.lga_city_town.value,
-        DATE_OF_BIRTH: form.dob.value,
-        OLEVEL_TYPE: form.olevel_type.value,
-        OLEVEL_YEAR: form.olevel_year.value,
-        OLEVEL_EXAM_NUMBER: form.olevel_exam.value,
+        GENDER: form.gender?.value || "",
+        BLOOD_GROUP: form.blood_group?.value || "",
+        STATE: form.state?.value || "",
+        LGA_CITY_TOWN: form.lga_city_town?.value || "",
+        DATE_OF_BIRTH: form.date_of_birth?.value || "",
+        OLEVEL_TYPE: form.olevel_type?.value || "",
+        OLEVEL_YEAR: form.olevel_year?.value || "",
+        OLEVEL_EXAM_NUMBER: form.olevel_exam_number?.value || "",
+        ALEVEL_TYPE: form.alevel_type?.value || "",
+        ALEVEL_YEAR: form.alevel_year?.value || "",
+        PROFESSIONAL_CERTIFICATE_NUMBER: form.professional_certificate_number?.value || "",
         PASSPORT: passportUrl,
-        REMARKS: form.remarks.value
+        REMARKS: form.remarks?.value || ""
       };
 
-      // ===== SUBJECT SAVE =====
+      // ===== SUBJECTS =====
       Object.keys(subjects).forEach(sub => {
-        const g = subjects[sub].grade?.value?.replace(/\(.+?\)/g, "").trim();
+        const g = subjects[sub].grade?.value?.replace(/\(.+?\)/g, "").trim() || "";
         const b = subjects[sub].body?.value || "";
-
         record[sub] = g ? `${g} (${b})` : "";
       });
 
-      const url = recordId
-        ? `${SHEETBEST_URL}/${recordId}`
-        : SHEETBEST_URL;
-
+      const url = recordId ? `${SHEETBEST_URL}/${recordId}` : SHEETBEST_URL;
       const method = recordId ? "PUT" : "POST";
 
       await fetch(url, {
@@ -189,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
       location.reload();
 
     } catch (err) {
+      console.error(err);
       alert("ERROR: " + err);
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT";
