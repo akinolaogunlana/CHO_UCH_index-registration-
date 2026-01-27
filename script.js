@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let passportDataUrl = "";
-  let virtualId = null; // 🔑 SURNAME + BLOOD_GROUP + OLEVEL_TYPE
+  let recordId = null; // stores internal SheetBest ID for updating
 
   // ================= PASSPORT PREVIEW =================
   $("passport").addEventListener("change", function () {
@@ -42,14 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
     previewContainer.innerHTML = "";
     previewContainer.appendChild(img);
 
-    passportDataUrl = img.src;
+    passportDataUrl = img.src; // temporarily store preview
   });
 
   // ================= SEARCH =================
   $("searchBtn").addEventListener("click", async () => {
     const surname = $("searchSurname").value.trim().toUpperCase();
-    const blood   = $("searchBloodGroup").value;
-    const olevel  = $("searchOlevelType").value;
+    const blood   = $("searchBloodGroup").value.trim();
+    const olevel  = $("searchOlevelType").value.trim();
 
     if (!surname || !blood || !olevel) {
       alert("Surname, blood group and O-Level type required.");
@@ -60,27 +60,28 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(SHEETBEST_URL);
       const data = await res.json();
 
-      // 🔑 SEARCH: SURNAME + BLOOD_GROUP + OLEVEL_TYPE
+      // Search by SURNAME + BLOOD_GROUP + OLEVEL_TYPE
       const record = data.find(r =>
         r.SURNAME?.toUpperCase() === surname &&
-        r.BLOOD_GROUP === blood &&
-        r.OLEVEL_TYPE === olevel
+        r.BLOOD_GROUP?.toUpperCase() === blood.toUpperCase() &&
+        r.OLEVEL_TYPE?.toUpperCase() === olevel.toUpperCase()
       );
 
       if (!record) {
         alert("No record found.");
-        virtualId = null;
+        recordId = null;
         return;
       }
 
-      // Create virtual ID for PATCH
-      virtualId = `${surname}|${blood}|${olevel}`;
+      // store internal SheetBest ID for PATCH
+      recordId = record.id;
 
       // ===== NORMAL FIELDS =====
       for (let el of form.elements) {
         if (!el.name) continue;
         const key = el.name.toUpperCase();
         if (record[key] !== undefined) el.value = record[key];
+        else el.value = ""; // empty if field missing
       }
 
       // ===== SUBJECTS =====
@@ -118,15 +119,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error(err);
-      alert("ERROR: " + err);
+      alert("ERROR loading records: " + err);
     }
   });
 
-  // ================= SUBMIT/UPDATE =================
+  // ================= SUBMIT =================
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!virtualId) {
+    if (!recordId) {
       alert("Please search and load a record first. Cannot update a non-existing record.");
       return;
     }
@@ -137,6 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       let passportUrl = passportDataUrl;
 
+      // Upload new passport if selected
       const file = $("passport").files[0];
       if (file) {
         const fd = new FormData();
@@ -147,7 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           body: fd
         });
-
         const img = await upload.json();
         if (img?.secure_url) passportUrl = img.secure_url;
       }
@@ -180,8 +181,8 @@ document.addEventListener("DOMContentLoaded", () => {
         record[sub] = g ? `${g} (${b})` : "";
       });
 
-      // ===== PATCH using virtual ID =====
-      await fetch(`${SHEETBEST_URL}/${virtualId}`, {
+      // PATCH the record using internal SheetBest ID
+      await fetch(`${SHEETBEST_URL}/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(record)
@@ -192,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error(err);
-      alert("ERROR: " + err);
+      alert("ERROR updating record: " + err);
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT";
     }
