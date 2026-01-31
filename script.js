@@ -14,6 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = form.querySelector("button[type='submit']");
   const previewContainer = $("previewContainer");
 
+  let passportUrl = "";
+  let recordID = null;
+  let isAdmin = false;
+
   /* ================= SUBJECT ELEMENTS ================= */
 
   const subjects = {
@@ -24,19 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
     PHYSICS:     { grade: $("phyGrade"),  body: $("phyBody") }
   };
 
-  let passportUrl = "";
-  let recordID = null;
-
   /* ================= NORMALIZER ================= */
 
-  const normalize = (value) => {
-    return value
-      ?.toString()
-      .replace(/\s+/g, "")     // remove all spaces
-      .replace(/[\/\\]/g, "")  // remove slashes
+  const normalize = (value) =>
+    value?.toString()
+      .replace(/\s+/g, "")
+      .replace(/[\/\\]/g, "")
       .toUpperCase()
       .trim();
-  };
 
   /* ================= SEARCH RECORD ================= */
 
@@ -62,50 +61,38 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       if (!record) {
-        alert("❌ Record not found. Please check your details carefully.");
+        alert("❌ Record not found");
         return;
       }
 
       recordID = record.ID;
-
-      /* ================= AUTO FILL ================= */
+      $("recordId").value = recordID;
 
       for (let el of form.elements) {
         if (!el.name) continue;
         const key = el.name.toUpperCase();
-        if (record[key] !== undefined) {
-          el.value = record[key];
-        }
+        if (record[key] !== undefined) el.value = record[key];
       }
-
-      /* ================= SUBJECT SPLIT ================= */
 
       Object.keys(subjects).forEach(sub => {
         const value = record[sub] || "";
         const match = value.match(/^(.+?)\s*\((.+?)\)$/);
-
         subjects[sub].grade.value = match ? match[1] : value;
         subjects[sub].body.value  = match ? match[2] : "";
       });
-
-      /* ================= PASSPORT ================= */
 
       if (record.PASSPORT) {
         passportUrl = record.PASSPORT;
         previewContainer.innerHTML = `
           <img src="${passportUrl}"
-               style="width:150px;height:180px;
-                      object-fit:cover;
-                      border-radius:8px;
-                      border:2px solid #444;">
+               style="width:150px;height:180px;object-fit:cover;border-radius:8px;border:2px solid #444;">
         `;
       }
 
-      alert("✅ Record loaded successfully. You can now edit.");
+      alert("✅ Record loaded successfully");
 
-    } catch (err) {
-      console.error(err);
-      alert("Network error. Please try again.");
+    } catch {
+      alert("Network error");
     }
   });
 
@@ -123,32 +110,21 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.innerText = "Updating...";
 
     try {
-
-      /* ========= PASSPORT UPLOAD ========= */
-
       const file = $("passport").files[0];
       if (file) {
         const fd = new FormData();
         fd.append("file", file);
         fd.append("upload_preset", CLOUDINARY_PRESET);
-
-        const upload = await fetch(CLOUDINARY_URL, {
-          method: "POST",
-          body: fd
-        });
-
-        const img = await upload.json();
-        passportUrl = img.secure_url;
+        const upload = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+        passportUrl = (await upload.json()).secure_url;
       }
-
-      /* ========= BUILD RECORD ========= */
 
       const record = {
         ID: recordID,
         SURNAME: form.surname.value.toUpperCase(),
         FIRSTNAME: form.firstname.value.toUpperCase(),
         OTHERNAMES: form.othernames.value?.toUpperCase() || "",
-        CADRE: "CHO",
+        CADRE: form.cadre.value,
         GENDER: form.gender.value,
         BLOOD_GROUP: form.blood_group.value,
         STATE: form.state.value,
@@ -162,18 +138,14 @@ document.addEventListener("DOMContentLoaded", () => {
         PROFESSIONAL_CERTIFICATE_NUMBER:
           form.professional_certificate_number.value,
         PASSPORT: passportUrl,
-        REMARKS: "RETRAINEE"
+        REMARKS: form.remarks.value || "RETRAINEE"
       };
-
-      /* ========= SUBJECT SAVE ========= */
 
       Object.keys(subjects).forEach(sub => {
         const g = subjects[sub].grade.value.trim();
         const b = subjects[sub].body.value.trim();
         record[sub] = g ? `${g} (${b})` : "";
       });
-
-      /* ========= UPDATE ========= */
 
       await fetch(`${SHEETBEST_URL}/ID/${recordID}`, {
         method: "PATCH",
@@ -184,12 +156,74 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("✅ Record updated successfully");
       location.reload();
 
-    } catch (err) {
-      console.error(err);
-      alert("❌ Update failed.");
+    } catch {
+      alert("❌ Update failed");
       submitBtn.disabled = false;
       submitBtn.innerText = "SUBMIT / UPDATE";
     }
+  });
+
+  /* ================= ADMIN LOGIN ================= */
+
+  $("adminLoginBtn").addEventListener("click", () => {
+    const pass = prompt("Enter Admin Password");
+    if (pass === "CHO_ADMIN_2026") {
+      isAdmin = true;
+      $("downloadExcelBtn").style.display = "block";
+      alert("✅ Admin access granted");
+    } else {
+      alert("❌ Wrong password");
+    }
+  });
+
+  /* ================= ADMIN EXCEL DOWNLOAD ================= */
+
+  $("downloadExcelBtn").addEventListener("click", async () => {
+    if (!isAdmin) return;
+
+    const res = await fetch(SHEETBEST_URL);
+    const data = await res.json();
+
+    const split = v => {
+      const m = (v || "").match(/^(.+?)\s*\((.+?)\)$/);
+      return m ? [m[1], m[2]] : [v || "", ""];
+    };
+
+    const sheet = [[
+      "S/N","SURNAME","FIRST NAME","OTHER NAMES","CADRE","GENDER",
+      "BLOOD GROUP","STATE","LGA / CITY / TOWN","DATE OF BIRTH",
+      "O-LEVEL TYPE","O-LEVEL YEAR(S)","O-LEVEL EXAM NUMBER",
+      "A-LEVEL TYPE","A-LEVEL YEAR",
+      "PROFESSIONAL CERTIFICATE NUMBER",
+      "ENGLISH GRADE","ENGLISH BODY",
+      "MATHEMATICS GRADE","MATHEMATICS BODY",
+      "BIOLOGY GRADE","BIOLOGY BODY",
+      "CHEMISTRY GRADE","CHEMISTRY BODY",
+      "PHYSICS GRADE","PHYSICS BODY",
+      "REMARKS"
+    ]];
+
+    data.forEach((r, i) => {
+      const [eG,eB]=split(r.ENGLISH);
+      const [mG,mB]=split(r.MATHEMATICS);
+      const [bG,bB]=split(r.BIOLOGY);
+      const [cG,cB]=split(r.CHEMISTRY);
+      const [pG,pB]=split(r.PHYSICS);
+
+      sheet.push([
+        i+1,r.SURNAME,r.FIRSTNAME,r.OTHERNAMES,r.CADRE,r.GENDER,
+        r.BLOOD_GROUP,r.STATE,r.LGA_CITY_TOWN,r.DATE_OF_BIRTH,
+        r.OLEVEL_TYPE,r.OLEVEL_YEAR,r.OLEVEL_EXAM_NUMBER,
+        r.ALEVEL_TYPE,r.ALEVEL_YEAR,
+        r.PROFESSIONAL_CERTIFICATE_NUMBER,
+        eG,eB,mG,mB,bG,bB,cG,cB,pG,pB,r.REMARKS
+      ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheet);
+    XLSX.utils.book_append_sheet(wb, ws, "CHO STANDARD SHEET");
+    XLSX.writeFile(wb, "CHO_STANDARD_ADMIN_SHEET.xlsx");
   });
 
 });
