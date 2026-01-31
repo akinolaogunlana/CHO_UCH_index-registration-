@@ -1,13 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-
   const $ = id => document.getElementById(id);
 
-  const SHEETBEST_URL =
-    "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
-
-  const CLOUDINARY_URL =
-    "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
-
+  const SHEETBEST_URL = "https://api.sheetbest.com/sheets/ceb9eddc-af9a-473a-9a32-f52c21c7f72b";
+  const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpsbwjw83/image/upload";
   const CLOUDINARY_PRESET = "cho_passports";
 
   const form = $("indexForm");
@@ -18,52 +13,32 @@ document.addEventListener("DOMContentLoaded", () => {
   let recordID = null;
   let isAdmin = false;
 
-  /* ================= SUBJECT ELEMENTS ================= */
-
   const subjects = {
-    ENGLISH:     { grade: $("engGrade"),  body: $("engBody") },
+    ENGLISH: { grade: $("engGrade"), body: $("engBody") },
     MATHEMATICS: { grade: $("mathGrade"), body: $("mathBody") },
-    BIOLOGY:     { grade: $("bioGrade"),  body: $("bioBody") },
-    CHEMISTRY:   { grade: $("chemGrade"), body: $("chemBody") },
-    PHYSICS:     { grade: $("phyGrade"),  body: $("phyBody") }
+    BIOLOGY: { grade: $("bioGrade"), body: $("bioBody") },
+    CHEMISTRY: { grade: $("chemGrade"), body: $("chemBody") },
+    PHYSICS: { grade: $("phyGrade"), body: $("phyBody") }
   };
 
-  /* ================= NORMALIZER ================= */
-
-  const normalize = (value) =>
-    value?.toString()
-      .replace(/\s+/g, "")
-      .replace(/[\/\\]/g, "")
-      .toUpperCase()
-      .trim();
+  const normalize = (v) => v?.toString().replace(/\s+/g, "").replace(/[\/\\]/g, "").toUpperCase().trim();
 
   /* ================= SEARCH RECORD ================= */
-
   $("searchBtn").addEventListener("click", async () => {
-
     const surname = $("searchSurname").value;
-    const blood   = $("searchBloodGroup").value;
-    const olevel  = $("searchOlevelType").value;
-
-    if (!surname || !blood || !olevel) {
-      alert("Surname, Blood Group and O-Level Type are required");
-      return;
-    }
+    const blood = $("searchBloodGroup").value;
+    const olevel = $("searchOlevelType").value;
+    if (!surname || !blood || !olevel) return alert("Surname, Blood Group and O-Level Type are required");
 
     try {
       const res = await fetch(SHEETBEST_URL);
       const data = await res.json();
-
       const record = data.find(r =>
         normalize(r.SURNAME) === normalize(surname) &&
         normalize(r.BLOOD_GROUP) === normalize(blood) &&
         normalize(r.OLEVEL_TYPE) === normalize(olevel)
       );
-
-      if (!record) {
-        alert("❌ Record not found");
-        return;
-      }
+      if (!record) return alert("❌ Record not found");
 
       recordID = record.ID;
       $("recordId").value = recordID;
@@ -78,33 +53,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const value = record[sub] || "";
         const match = value.match(/^(.+?)\s*\((.+?)\)$/);
         subjects[sub].grade.value = match ? match[1] : value;
-        subjects[sub].body.value  = match ? match[2] : "";
+        subjects[sub].body.value = match ? match[2] : "";
       });
 
       if (record.PASSPORT) {
         passportUrl = record.PASSPORT;
-        previewContainer.innerHTML = `
-          <img src="${passportUrl}"
-               style="width:150px;height:180px;object-fit:cover;border-radius:8px;border:2px solid #444;">
-        `;
+        previewContainer.innerHTML = `<img src="${passportUrl}" style="width:150px;height:180px;object-fit:cover;border-radius:8px;border:2px solid #444;">`;
       }
 
       alert("✅ Record loaded successfully");
-
     } catch {
       alert("Network error");
     }
   });
 
   /* ================= SUBMIT / UPDATE ================= */
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    if (!recordID) {
-      alert("Please search and load your record first.");
-      return;
-    }
+    if (!recordID) return alert("Please search and load your record first");
 
     submitBtn.disabled = true;
     submitBtn.innerText = "Updating...";
@@ -115,8 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const fd = new FormData();
         fd.append("file", file);
         fd.append("upload_preset", CLOUDINARY_PRESET);
-        const upload = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
-        passportUrl = (await upload.json()).secure_url;
+        passportUrl = (await (await fetch(CLOUDINARY_URL, { method: "POST", body: fd })).json()).secure_url;
       }
 
       const record = {
@@ -135,8 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         OLEVEL_EXAM_NUMBER: form.olevel_exam_number.value,
         ALEVEL_TYPE: form.alevel_type.value,
         ALEVEL_YEAR: form.alevel_year.value,
-        PROFESSIONAL_CERTIFICATE_NUMBER:
-          form.professional_certificate_number.value,
+        PROFESSIONAL_CERTIFICATE_NUMBER: form.professional_certificate_number.value,
         PASSPORT: passportUrl,
         REMARKS: form.remarks.value || "RETRAINEE"
       };
@@ -155,7 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       alert("✅ Record updated successfully");
       location.reload();
-
     } catch {
       alert("❌ Update failed");
       submitBtn.disabled = false;
@@ -164,12 +127,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ================= ADMIN LOGIN ================= */
-
   $("adminLoginBtn").addEventListener("click", () => {
     const pass = prompt("Enter Admin Password");
     if (pass === "CHO_ADMIN_2026") {
       isAdmin = true;
-      $("downloadExcelBtn").style.display = "block";
+      $("downloadExcelBtn").style.display = "inline-block";
       alert("✅ Admin access granted");
     } else {
       alert("❌ Wrong password");
@@ -177,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ================= ADMIN EXCEL DOWNLOAD ================= */
-
   $("downloadExcelBtn").addEventListener("click", async () => {
     if (!isAdmin) return;
 
@@ -203,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "REMARKS"
     ]];
 
-    data.forEach((r, i) => {
+    data.forEach((r,i)=>{
       const [eG,eB]=split(r.ENGLISH);
       const [mG,mB]=split(r.MATHEMATICS);
       const [bG,bB]=split(r.BIOLOGY);
