@@ -40,7 +40,7 @@
   <option>NECO / NECO</option>
   <option>NABTEB / NABTEB</option>
   <option>WAEC / NECO</option>
- <option>NECO / WAEC</option>
+  <option>NECO / WAEC</option>
   <option>NABTEB / WAEC</option>
   <option>NABTEB / NECO</option>
 </select>
@@ -55,27 +55,23 @@
 
 <form id="indexForm" enctype="multipart/form-data">
 
-  <!-- REQUIRED HIDDEN ID -->
   <input type="hidden" id="recordId" name="ID">
 
   <input name="surname" placeholder="SURNAME" required>
   <input name="firstname" placeholder="FIRST NAME" required>
   <input name="othernames" placeholder="OTHER NAMES (optional)">
 
-  <!-- Passport -->
   <label>Passport (JPG / PNG only – max 5MB)</label>
   <input type="file" id="passport" accept="image/jpeg,image/png">
 
   <input name="cadre" value="CHO" readonly>
 
-  <!-- Gender -->
   <select name="gender" required>
     <option value="">SELECT GENDER</option>
     <option>MALE</option>
     <option>FEMALE</option>
   </select>
 
-  <!-- Blood Group -->
   <select name="blood_group" required>
     <option value="">SELECT BLOOD GROUP</option>
     <option>A+</option><option>A-</option>
@@ -87,11 +83,9 @@
   <input name="state" placeholder="STATE">
   <input name="lga_city_town" placeholder="LGA / CITY / TOWN">
 
-  <!-- DOB -->
   <label>Date of Birth (DD/MM/YYYY)</label>
   <input name="date_of_birth" placeholder="DD/MM/YYYY" required>
 
-  <!-- O-Level -->
   <select name="olevel_type" required>
     <option value="">SELECT O-LEVEL TYPE</option>
     <option>WAEC</option>
@@ -108,11 +102,9 @@
   <input name="olevel_year" placeholder="O-LEVEL YEAR(S)">
   <input name="olevel_exam_number" placeholder="O-LEVEL EXAM NUMBER">
 
-  <!-- A-Level -->
   <input name="alevel_type" placeholder="A-LEVEL TYPE">
   <input name="alevel_year" placeholder="A-LEVEL YEAR">
 
-  <!-- Professional -->
   <input
     name="professional_certificate_number"
     placeholder="PROFESSIONAL CERTIFICATE NUMBER">
@@ -169,11 +161,12 @@
 
   <button type="submit">SUBMIT / UPDATE</button>
 
+  <!-- 🔒 ADMIN ONLY -->
   <button
     type="button"
     id="downloadPDFBtn"
-    style="margin-top:10px;background:#4caf50;color:white;">
-    Download My Submission PDF
+    style="margin-top:10px;background:#4caf50;color:white;display:none;">
+    Download Submission PDF (Admin Only)
   </button>
 
   <button
@@ -190,7 +183,6 @@
     Download All Passports (ZIP)
   </button>
 
-  <!-- Passport Preview -->
   <div
     id="previewContainer"
     style="margin-top:15px;text-align:center;">
